@@ -17,11 +17,11 @@ export default function ProtectedLayout() {
   ];
 
   return (
-    <div className="flex h-[100dvh] bg-muted/30 text-foreground font-sans overflow-hidden selection:bg-primary selection:text-primary-foreground">
+    <div className="flex h-dvh bg-muted/30 text-foreground font-sans overflow-hidden selection:bg-primary selection:text-primary-foreground">
       {/* Sidebar - Soft, Premium */}
       <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-background/50 backdrop-blur-xl">
         <div className="h-16 flex items-center px-6 border-b border-border/50">
-          <div className="bg-primary p-1.5 rounded-lg text-primary-foreground mr-3">
+          <div className="bg-primary p-1.5 rounded-sm text-primary-foreground mr-3">
             <LayoutDashboard size={18} />
           </div>
           <h1 className="text-lg font-bold tracking-tight">InsightFlow</h1>

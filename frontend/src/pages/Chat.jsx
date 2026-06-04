@@ -5,7 +5,7 @@ export default function Chat() {
   const { chatId } = useParams();
   
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] bg-background border border-border rounded-2xl shadow-sm overflow-hidden">
+    <div className="flex flex-col h-full bg-background border border-border rounded-2xl shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-card">
         <h2 className="text-lg font-semibold tracking-tight">
           {chatId ? `Conversation / ${chatId}` : 'New AI Analytics Chat'}
