@@ -36,7 +36,8 @@ doc/
 │   ├── problem-statement.md              # The bottlenecks in data analytics that InsightFlow solves
 │   ├── system-overview.md                # High-level overview of the InsightFlow vision
 │   ├── core-features.md                  # Deep dive into the AI analytics engines
-│   └── user-workflows.md                 # End-to-end data processing workflows
+│   ├── user-workflows.md                 # End-to-end data processing workflows
+│   └── frontend-architecture.md          # Frontend routes and separation of concerns
 │
 ├── reference/                            # Technical specifications (the "What")
 │   └── technology-stack.md               # Details on frontend, backend, DB, and AI layers
