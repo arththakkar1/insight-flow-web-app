@@ -27,10 +27,10 @@ The documentation is organized into four main sections:
 
 InsightFlow is built with a modern technology stack:
 
-- **Frontend**: React.js, TypeScript, Tailwind CSS, shadcn/ui, Recharts
+- **Frontend**: Vite, React.js, TypeScript, Tailwind CSS, shadcn/ui, Recharts
 - **Backend**: Python, Django, Django REST Framework, Pandas, NumPy
 - **Database**: PostgreSQL
-- **AI Layer**: OpenAI API (or Local LLM) & Rule-Based Analytics Engine
+- **AI Layer**: LM Studio (Local LLMs) & Rule-Based Analytics Engine
 
 ---
 
