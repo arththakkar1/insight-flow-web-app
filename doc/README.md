@@ -33,8 +33,10 @@ Diátaxis is a systematic framework for structuring technical documentation. It 
 ```text
 doc/
 ├── explanation/                          # Theoretical understanding (the "Why")
+│   ├── problem-statement.md              # The bottlenecks in data analytics that InsightFlow solves
 │   ├── system-overview.md                # High-level overview of the InsightFlow vision
-│   └── core-features.md                  # Deep dive into the AI analytics engines
+│   ├── core-features.md                  # Deep dive into the AI analytics engines
+│   └── user-workflows.md                 # End-to-end data processing workflows
 │
 ├── reference/                            # Technical specifications (the "What")
 │   └── technology-stack.md               # Details on frontend, backend, DB, and AI layers

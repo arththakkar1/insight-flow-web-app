@@ -2,11 +2,11 @@
 
 **InsightFlow** is a SaaS platform that automates the most time-consuming stages of the data analytics workflow. It helps data analysts, Power BI developers, students, and business users transform raw datasets into actionable insights by providing intelligent recommendations for data cleaning, data modeling, DAX measures, visualizations, and dashboard design.
 
-## 📖 Documentation
+## Documentation
 
 All technical and conceptual documentation for InsightFlow is structured according to the **Diátaxis framework** and is located in the `doc/` directory. 
 
-👉 **[Go to InsightFlow Documentation](./doc/README.md)**
+**[Go to InsightFlow Documentation](./doc/README.md)**
 
 The documentation is organized into four main sections:
 - **[Tutorials](./doc/tutorials/)**: Step-by-step guides to get started with the platform.
@@ -14,7 +14,7 @@ The documentation is organized into four main sections:
 - **[Reference](./doc/reference/)**: Technical specifications and lists (e.g., Technology Stack).
 - **[Explanation](./doc/explanation/)**: Deep dives into the system architecture and core features.
 
-## 🚀 Core Features
+## Core Features
 
 - **Data Profiling**: Comprehensive summary and analysis of uploaded datasets.
 - **Data Cleaning Assistant**: AI-driven suggestions for handling missing values, duplicates, and standardizing formats.
@@ -23,7 +23,7 @@ The documentation is organized into four main sections:
 - **Visualization & Dashboard Builder**: Recommends charts and generates full dashboard blueprints based on data types.
 - **AI Analytics Assistant**: A natural language chat interface to ask questions about your data and analytics workflow.
 
-## 🛠 Technology Stack
+## Technology Stack
 
 InsightFlow is built with a modern technology stack:
 
