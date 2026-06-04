@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { BarChart2 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function Register() {
@@ -24,12 +23,7 @@ export default function Register() {
       </nav>
 
       <main className="flex-1 flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0, filter: 'blur(4px)' }}
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          transition={{ duration: 0.4 }}
-          className="max-w-md w-full p-8 md:p-10 bg-background border border-border shadow-xl shadow-black/5 rounded-3xl"
-        >
+        <div className="max-w-md w-full p-8 md:p-10 bg-background border border-border shadow-xl shadow-black/5 rounded-3xl">
           <div className="flex flex-col items-center mb-8 text-center">
             <h2 className="text-2xl font-bold tracking-tight mb-2">Create Account</h2>
             <p className="text-muted-foreground text-sm">Start your free trial and set up your workspace.</p>
@@ -58,7 +52,7 @@ export default function Register() {
               </Link>
             </div>
           </form>
-        </motion.div>
+        </div>
       </main>
     </div>
   );

@@ -1,6 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { PieChart, LineChart, BarChart, ChevronRight, FileText } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export default function Reports() {
   const { reportId } = useParams();
@@ -71,12 +70,7 @@ export default function Reports() {
       <div className="grid grid-cols-1 gap-4">
         {dummyReports.map((report, i) => (
           <Link key={report.id} to={`/reports/${report.id}`} className="block group">
-            <motion.div 
-              initial={{ opacity: 0, filter: 'blur(4px)' }}
-              animate={{ opacity: 1, filter: 'blur(0px)' }}
-              transition={{ delay: i * 0.05, duration: 0.4 }}
-              className="p-6 bg-background rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex justify-between items-center"
-            >
+            <div className="p-6 bg-background rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex justify-between items-center">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-primary/10 text-primary rounded-xl">
                   <FileText size={24} />
@@ -93,7 +87,7 @@ export default function Reports() {
                   <span className="px-2.5 py-1 bg-muted rounded-md text-xs font-medium">12 DAX</span>
                 </div>
               </div>
-            </motion.div>
+            </div>
           </Link>
         ))}
       </div>

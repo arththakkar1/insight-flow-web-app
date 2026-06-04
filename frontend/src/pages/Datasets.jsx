@@ -1,6 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { UploadCloud, FileSpreadsheet, Database, ChevronRight, CheckCircle2 } from 'lucide-react';
-import { motion } from 'motion/react';
 
 export default function Datasets() {
   const { datasetId } = useParams();
@@ -74,12 +73,7 @@ export default function Datasets() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dummyDatasets.map((dataset, i) => (
           <Link key={dataset.id} to={`/datasets/${dataset.id}`} className="block group">
-            <motion.div 
-              initial={{ opacity: 0, filter: 'blur(4px)' }}
-              animate={{ opacity: 1, filter: 'blur(0px)' }}
-              transition={{ delay: i * 0.05, duration: 0.4 }}
-              className="bg-background p-6 rounded-2xl border border-border hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col relative overflow-hidden"
-            >
+            <div className="bg-background p-6 rounded-2xl border border-border hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col relative overflow-hidden">
               <div className="flex justify-between items-start mb-6 relative z-10">
                 <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                   {dataset.name.includes('DB') ? <Database size={20} /> : <FileSpreadsheet size={20} />}
@@ -90,7 +84,7 @@ export default function Datasets() {
               </div>
               <h3 className="font-semibold text-base tracking-tight mb-1 relative z-10">{dataset.name}</h3>
               <p className="text-sm text-muted-foreground mt-auto relative z-10">{dataset.rows} rows</p>
-            </motion.div>
+            </div>
           </Link>
         ))}
       </div>
