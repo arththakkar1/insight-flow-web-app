@@ -22,36 +22,26 @@ This structure ensures that our **pages** only handle layout and routing, our **
 
 ## Routing Strategy
 
-InsightFlow uses a client-side router (like `react-router-dom`) with nested routes to represent the logical flow of the analytics process. The application is divided into several key routes:
+InsightFlow uses a client-side router (like `react-router-dom`) structured exactly as follows to provide a clean and intuitive user experience:
 
 ### 1. Public Routes
-- **`/` (Landing Page)**
-  - **Contents**: Product vision, feature overview, and call-to-action buttons for Login/Signup.
-- **`/login` & `/signup`**
-  - **Contents**: Authentication forms for user access.
+- **`/` (Landing Page)**: Product vision and call-to-actions.
+- **`/login`**: User authentication and sign-in.
+- **`/register`**: New user registration.
 
-### 2. Main Application Routes (Protected)
-- **`/dashboard`**
-  - **Contents**: The user's main hub. Displays a list of recent projects, datasets, and a button to "Start New Analysis."
+### 2. Core Application Routes (Protected)
 
-### 3. Project Workspace Routes
-These routes are nested under a specific project ID (`/projects/:projectId`) to maintain context.
+- **`/chat` (AI Assistant Hub)**
+  - **`/chat`**: Main chat interface to start a new natural language analysis with the AI Analytics Assistant.
+  - **`/chat/:chatId`**: A specific, saved conversation history with the assistant.
 
-- **`/projects/:projectId/data` (Data Ingestion)**
-  - **Contents**: File upload zone (CSV/Excel) or database connection forms. Shows a preview table of the uploaded raw data.
-  
-- **`/projects/:projectId/profiling` (Data Profiling & Cleaning)**
-  - **Contents**: Displays the profiling report (missing values, data types). Contains interactive panels to apply the AI's cleaning recommendations.
+- **`/datasets` (Data Management)**
+  - **`/datasets`**: A list or grid of all datasets the user has uploaded, including basic metadata and profiling summaries.
+  - **`/datasets/:datasetId`**: Detailed view of a specific dataset, showing data profiling, cleaning recommendations, and data modeling status.
 
-- **`/projects/:projectId/modeling` (Data Modeling)**
-  - **Contents**: A visual canvas or structured list showing detected tables, proposed Primary/Foreign keys, and the suggested Star/Snowflake schema.
+- **`/reports` (Insights & Visualizations)**
+  - **`/reports/:reportId`**: A detailed, specific report containing the visualization blueprint, generated DAX measures, and related analytical metrics for a dataset or query.
 
-- **`/projects/:projectId/dax` (DAX Generator)**
-  - **Contents**: A dual-pane interface where the user selects metrics on one side, and the AI presents the generated DAX formulas and explanations on the other.
-
-- **`/projects/:projectId/visualizations` (Dashboard Blueprint)**
-  - **Contents**: A grid layout recommending specific charts (rendered via Recharts) based on the dataset, effectively serving as a blueprint for Power BI.
-
-### 4. Global UI Elements
-- **AI Analytics Assistant Widget**
-  - **Contents**: A persistent chat interface (e.g., a floating side panel) available across all `/projects/*` routes, powered by LM Studio, allowing users to ask natural language questions about their data at any step.
+### 3. User & Settings Routes
+- **`/settings`**: Application and user preferences (e.g., connected database configurations, theme toggles).
+- **`/profile`**: User account details and personal information.
