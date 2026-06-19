@@ -1,6 +1,6 @@
 id,name,age,city
 1,Alice,25.0,Ahmedabad
-2,Bob,,Surat
-3,,30.0,Vadodara
-4,David,28.0,
-5,Eva,,Bharuch
+2,Bob,28.0,Surat
+3,Alice,30.0,Vadodara
+4,David,28.0,Ahmedabad
+5,Eva,28.0,Bharuch

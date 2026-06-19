@@ -42,7 +42,7 @@ export default function Reports() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+        <div className="flex items-center pb-8 gap-2 text-sm text-muted-foreground font-medium">
           <Link to="/reports" className="hover:text-foreground transition-colors">Reports</Link>
           <ChevronRight size={16} />
           <span className="text-foreground">{reportDetails.title}</span>
@@ -63,7 +63,7 @@ export default function Reports() {
               download
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-[8px] text-sm font-semibold transition-all shadow-sm"
             >
-              Export CSV
+              Export PDF
             </a>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function Reports() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 mb-10 gap-4">
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading reports...</div>
         ) : reports.map((report) => (

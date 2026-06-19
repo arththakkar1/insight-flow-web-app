@@ -273,8 +273,8 @@ class DatasetGenerateReportView(APIView):
                         json_str = json_match.group(1)
                 
                 data = json.loads(json_str)
-                visuals_data = data.get("visuals_data", [])
-                dax_data = data.get("dax_data", [])
+                visuals_data = data.get("visuals_data", [])[:6]
+                dax_data = data.get("dax_data", [])[:5]
             except Exception as e:
                 print(f"LLM Report Generation failed: {str(e)}")
                 # Fallback to hardcoded logic
@@ -597,24 +597,74 @@ class ReportExportView(APIView):
         try:
             report = Report.objects.get(pk=pk)
             
-            response = HttpResponse(
-                content_type='text/csv',
-                headers={'Content-Disposition': f'attachment; filename="Report_{report.title}.csv"'},
-            )
+            response = HttpResponse(content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="Report_{report.title}.pdf"'
             
-            writer = csv.writer(response)
-            writer.writerow(['Report Title', report.title])
-            writer.writerow(['Dataset', report.dataset])
-            writer.writerow(['Generated', report.generated])
-            writer.writerow(['Visuals Count', report.visuals_count])
-            writer.writerow(['DAX Measures Count', report.dax_count])
-            writer.writerow([])
-            writer.writerow(['Sample Generated DAX Measures'])
-            writer.writerow(['Measure Name', 'Formula'])
-            writer.writerow(['Total Sales', "SUM('Sales'[Amount])"])
-            writer.writerow(['YTD Sales', "CALCULATE([Total Sales], DATESYTD('Date'[Date]))"])
-            writer.writerow(['Profit Margin %', "DIVIDE(SUM('Sales'[Profit]), [Total Sales], 0)"])
+            from reportlab.pdfgen import canvas
+            from reportlab.lib.pagesizes import letter
             
+            p = canvas.Canvas(response, pagesize=letter)
+            width, height = letter
+            
+            # Title
+            p.setFont("Helvetica-Bold", 24)
+            p.drawString(50, height - 50, f"InsightFlow Report: {report.title}")
+            
+            # Meta
+            p.setFont("Helvetica", 12)
+            p.drawString(50, height - 80, f"Dataset Source: {report.dataset}")
+            p.drawString(50, height - 100, f"Generated On: {report.generated}")
+            p.drawString(50, height - 120, f"Total Visuals: {report.visuals_count} | Total DAX Measures: {report.dax_count}")
+            
+            p.line(50, height - 130, width - 50, height - 130)
+            
+            # Visuals
+            y_pos = height - 160
+            p.setFont("Helvetica-Bold", 16)
+            p.drawString(50, y_pos, "Dashboard Visualizations")
+            y_pos -= 30
+            
+            for i, vis in enumerate(report.visuals_data):
+                if y_pos < 100:
+                    p.showPage()
+                    y_pos = height - 50
+                p.setFont("Helvetica-Bold", 12)
+                p.drawString(50, y_pos, f"{i+1}. {vis.get('title', 'Unknown')} ({vis.get('type', 'Chart')})")
+                y_pos -= 20
+                p.setFont("Helvetica", 11)
+                p.drawString(70, y_pos, f"Description: {vis.get('description', '')}")
+                y_pos -= 30
+                
+            # DAX
+            y_pos -= 20
+            if y_pos < 150:
+                p.showPage()
+                y_pos = height - 50
+            
+            p.setFont("Helvetica-Bold", 16)
+            p.drawString(50, y_pos, "DAX Measures")
+            y_pos -= 30
+            
+            import textwrap
+            for i, dax in enumerate(report.dax_data):
+                if y_pos < 100:
+                    p.showPage()
+                    y_pos = height - 50
+                p.setFont("Helvetica-Bold", 12)
+                p.drawString(50, y_pos, f"{i+1}. {dax.get('name', 'Measure')}")
+                y_pos -= 20
+                
+                textobject = p.beginText(70, y_pos)
+                textobject.setFont("Courier", 10)
+                formula = dax.get('formula', '')
+                lines = textwrap.wrap(formula, width=85)
+                for line in lines:
+                    textobject.textLine(line)
+                p.drawText(textobject)
+                y_pos -= (len(lines) * 15) + 20
+                
+            p.showPage()
+            p.save()
             return response
             
         except Report.DoesNotExist:

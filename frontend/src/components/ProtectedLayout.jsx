@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { MessageSquare, Database, BarChart2, Settings, User, LogOut, LayoutDashboard, Trash2 } from 'lucide-react';
+import { MessageSquare, Database, BarChart2, Settings, User, LogOut, Trash2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import DeleteModal from './DeleteModal';
 
@@ -25,7 +25,7 @@ export default function ProtectedLayout() {
       <aside className="w-64 bg-background border border-border rounded-[16px] flex flex-col shrink-0 shadow-sm overflow-hidden">
         <div className="h-20 flex items-center px-6 border-b border-border">
           <div className="bg-primary p-2 rounded-lg text-primary-foreground mr-3">
-            <LayoutDashboard size={20} strokeWidth={2.5} />
+            <BarChart2 size={20} strokeWidth={2.5} />
           </div>
           <h1 className="text-xl font-bold tracking-tight">InsightFlow</h1>
         </div>

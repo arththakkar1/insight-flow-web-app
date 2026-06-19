@@ -56,7 +56,7 @@ class OpenRouterClient:
             '    {"name": "Measure Name", "formula": "Valid DAX Expression"}\n'
             "  ]\n"
             "}\n"
-            "Ensure you provide 3 visuals and 3 DAX measures."
+            "Ensure you provide a maximum of 6 logical visuals and a maximum of 5 DAX measures."
         )
         messages = [
             {"role": "user", "content": prompt}
