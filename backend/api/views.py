@@ -372,7 +372,6 @@ class DatasetCleaningApplyView(APIView):
                 df = pd.read_csv(file_path)
                 
             if rec.action_type == "fill_median":
-                dataset.missing_values = max(0, dataset.missing_values - 45) # dummy subtraction
                 if df is not None and rec.column in df.columns:
                     if pd.api.types.is_numeric_dtype(df[rec.column]):
                         df[rec.column] = df[rec.column].fillna(df[rec.column].median())
@@ -405,13 +404,18 @@ class DatasetCleaningApplyView(APIView):
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "drop_duplicates":
-                dataset.duplicate_rows = 0
                 if df is not None:
                     df = df.drop_duplicates()
                     df.to_csv(file_path, index=False)
             
+            # ACCURATELY recalculate stats
+            if df is not None:
+                dataset.missing_values = int(df.isnull().sum().sum())
+                dataset.rows_count = len(df)
+                dataset.duplicate_rows = int(df.duplicated().sum())
+            
             rec.delete()
-            if not dataset.recommendations.exists():
+            if not dataset.recommendations.exists() and dataset.missing_values == 0:
                 dataset.status = "Cleaned"
             dataset.save()
             

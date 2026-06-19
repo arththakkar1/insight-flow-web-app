@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { MessageSquare, Database, BarChart2, Settings, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { MessageSquare, Database, BarChart2, Settings, User, LogOut, LayoutDashboard, Trash2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import DeleteModal from './DeleteModal';
 
 export default function ProtectedLayout() {
   const location = useLocation();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const navItems = [
     { name: 'AI Assistant', path: '/chat', icon: MessageSquare },
@@ -17,17 +20,20 @@ export default function ProtectedLayout() {
   ];
 
   return (
-    <div className="flex h-dvh bg-muted/30 text-foreground font-sans overflow-hidden selection:bg-primary selection:text-primary-foreground">
-      {/* Sidebar - Soft, Premium */}
-      <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-background/50 backdrop-blur-xl">
-        <div className="h-16 flex items-center px-6 border-b border-border/50">
-          <div className="bg-primary p-1.5 rounded-sm text-primary-foreground mr-3">
-            <LayoutDashboard size={18} />
+    <div className="flex h-dvh bg-muted text-foreground font-sans overflow-hidden selection:bg-primary selection:text-primary-foreground p-4 gap-4">
+      {/* Sidebar - High Contrast Modular Panel */}
+      <aside className="w-64 bg-background border border-border rounded-[16px] flex flex-col shrink-0 shadow-sm overflow-hidden">
+        <div className="h-20 flex items-center px-6 border-b border-border">
+          <div className="bg-primary p-2 rounded-lg text-primary-foreground mr-3">
+            <LayoutDashboard size={20} strokeWidth={2.5} />
           </div>
-          <h1 className="text-lg font-bold tracking-tight">InsightFlow</h1>
+          <h1 className="text-xl font-bold tracking-tight">InsightFlow</h1>
         </div>
         
-        <nav className="flex-1 py-6 flex flex-col gap-1 px-4 overflow-y-auto">
+        <nav className="flex-1 py-6 flex flex-col gap-2 px-4 overflow-y-auto">
+          <div className="px-2 mb-2">
+            <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Platform</span>
+          </div>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
@@ -35,19 +41,24 @@ export default function ProtectedLayout() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
+                  isActive 
+                    ? 'bg-primary text-primary-foreground shadow-md scale-[0.98]' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <Icon size={18} />
+                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4">
+        <div className="p-4 border-t border-border bg-card">
           <div className="flex flex-col gap-1">
+            <div className="px-2 mb-2 mt-2">
+              <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">System</span>
+            </div>
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
@@ -55,8 +66,10 @@ export default function ProtectedLayout() {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                    isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                    isActive 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                   }`}
                 >
                   <Icon size={18} />
@@ -65,7 +78,15 @@ export default function ProtectedLayout() {
               );
             })}
             
-            <div className="flex items-center justify-between px-3 py-2 mt-4 border-t border-border/50 pt-4">
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive transition-all text-left w-full mt-1"
+            >
+              <Trash2 size={18} />
+              Manage Data
+            </button>
+            
+            <div className="flex items-center justify-between px-3 py-2 mt-4 pt-4 border-t border-border">
               <Link
                 to="/login"
                 className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -79,14 +100,16 @@ export default function ProtectedLayout() {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="flex-1 overflow-y-auto bg-muted/30">
-          <div className="p-8 h-full max-w-7xl mx-auto">
-            <Outlet />
+      {/* Main Content - Modular Panel */}
+      <main className="flex-1 flex flex-col bg-background border border-border rounded-[16px] shadow-sm overflow-hidden relative">
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-10 h-full max-w-[1400px] mx-auto">
+            <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
           </div>
         </div>
       </main>
+
+      <DeleteModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />
     </div>
   );
 }

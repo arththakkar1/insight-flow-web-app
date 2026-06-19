@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { PieChart, LineChart, BarChart, ChevronRight, FileText, Trash2 } from 'lucide-react';
 
 export default function Reports() {
@@ -7,8 +7,8 @@ export default function Reports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [reportDetails, setReportDetails] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
   const navigate = useNavigate();
+  const { openDeleteModal } = useOutletContext() || {};
 
   useEffect(() => {
     fetch('http://localhost:8000/api/reports/')
@@ -37,20 +37,6 @@ export default function Reports() {
       .then(() => navigate('/reports'));
   };
 
-  const handleDeleteBulk = (deleteAll = false) => {
-    if (!confirm(deleteAll ? "Delete ALL reports?" : `Delete ${selectedIds.length} selected reports?`)) return;
-    fetch('http://localhost:8000/api/reports/', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delete_all: deleteAll, ids: selectedIds })
-    }).then(() => {
-      setSelectedIds([]);
-      fetch('http://localhost:8000/api/reports/')
-        .then(res => res.json())
-        .then(data => setReports(data));
-    });
-  };
-
   if (reportId) {
     if (!reportDetails) return <div className="p-8">Loading report...</div>;
 
@@ -63,11 +49,11 @@ export default function Reports() {
         </div>
         
         <div className="flex justify-between items-end mb-8">
-          <h1 className="text-2xl font-bold tracking-tight">{reportDetails.title}</h1>
+          <h1 className="text-[32px] leading-tight font-medium tracking-tight">{reportDetails.title}</h1>
           <div className="flex gap-2">
             <button 
               onClick={handleDeleteSingle}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-sm font-medium transition shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-background border border-border text-destructive hover:bg-destructive hover:text-destructive-foreground hover:border-destructive rounded-[8px] text-sm font-semibold transition-all shadow-sm"
             >
               <Trash2 size={16} />
               Delete
@@ -75,7 +61,7 @@ export default function Reports() {
             <a 
               href={`http://localhost:8000/api/reports/${reportId}/export/`}
               download
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-[8px] text-sm font-semibold transition-all shadow-sm"
             >
               Export CSV
             </a>
@@ -118,18 +104,10 @@ export default function Reports() {
         </div>
         <div className="flex gap-3">
           {reports.length > 0 && (
-            <>
-              {selectedIds.length > 0 && (
-                <button onClick={() => handleDeleteBulk(false)} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-xl text-sm font-medium hover:bg-red-500 hover:text-white transition shadow-sm">
-                  <Trash2 size={18} />
-                  Delete Selected ({selectedIds.length})
-                </button>
-              )}
-              <button onClick={() => handleDeleteBulk(true)} className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 rounded-xl text-sm font-medium hover:bg-red-500 hover:text-white transition shadow-sm">
-                <Trash2 size={18} />
-                Delete All
-              </button>
-            </>
+            <button onClick={openDeleteModal} className="flex items-center gap-2 px-4 py-2.5 bg-background border border-border text-destructive hover:bg-destructive/10 rounded-lg text-sm font-semibold transition-all shadow-sm">
+              <Trash2 size={16} />
+              Manage Data
+            </button>
           )}
         </div>
       </div>
@@ -138,20 +116,9 @@ export default function Reports() {
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading reports...</div>
         ) : reports.map((report) => (
-          <div key={report.id} onClick={() => navigate(`/reports/${report.id}`)} className="p-6 bg-background rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex justify-between items-center cursor-pointer group">
-            <div className="flex items-center gap-4">
-              <div onClick={(e) => e.stopPropagation()} className="mr-2">
-                <input 
-                  type="checkbox" 
-                  className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                  checked={selectedIds.includes(report.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) setSelectedIds([...selectedIds, report.id]);
-                    else setSelectedIds(selectedIds.filter(id => id !== report.id));
-                  }}
-                />
-              </div>
-              <div className="p-3 bg-primary/10 text-primary rounded-xl">
+          <div key={report.id} onClick={() => navigate(`/reports/${report.id}`)} className="p-6 bg-card rounded-[16px] border border-border shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.04)] hover:border-primary/50 transition-all flex justify-between items-center cursor-pointer group">
+            <div className="flex items-center gap-5">
+              <div className="p-3 bg-background border border-border text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors rounded-[8px] shadow-sm">
                 <FileText size={24} />
               </div>
               <div>

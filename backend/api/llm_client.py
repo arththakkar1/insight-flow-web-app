@@ -9,7 +9,14 @@ except ImportError:
 class OpenRouterClient:
     def __init__(self, base_url="https://openrouter.ai/api/v1", api_key=None):
         if not api_key:
-            api_key = OPENROUTER_API_KEY or os.environ.get("OPENROUTER_API_KEY", "your-api-key-here")
+            api_key = OPENROUTER_API_KEY or os.environ.get("OPENROUTER_API_KEY")
+            
+        if not api_key or api_key == "your-api-key-here":
+            raise ValueError(
+                "OpenRouter API key is missing. Please set OPENROUTER_API_KEY "
+                "in backend/api/secrets.py or as an environment variable."
+            )
+
         self.client = openai.OpenAI(
             base_url=base_url,
             api_key=api_key,

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { UploadCloud, FileSpreadsheet, Database, ChevronRight, CheckCircle2, Download, Trash2, PieChart } from 'lucide-react';
+import { useParams, Link, useNavigate, useOutletContext } from 'react-router-dom';
+import { UploadCloud, FileSpreadsheet, Database, ChevronRight, CheckCircle2, Download, Trash2, PieChart, Loader2, Circle } from 'lucide-react';
 
 export default function Datasets() {
   const { datasetId } = useParams();
@@ -8,9 +8,10 @@ export default function Datasets() {
   const [loading, setLoading] = useState(true);
   const [datasetDetails, setDatasetDetails] = useState(null);
   const [recommendations, setRecommendations] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [generatingReport, setGeneratingReport] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { openDeleteModal } = useOutletContext() || {};
 
   useEffect(() => {
     fetch('http://localhost:8000/api/datasets/')
@@ -27,12 +28,10 @@ export default function Datasets() {
 
   useEffect(() => {
     if (datasetId) {
-      // Fetch details
       fetch(`http://localhost:8000/api/datasets/${datasetId}/`)
         .then(res => res.json())
         .then(data => setDatasetDetails(data));
 
-      // Fetch recommendations
       fetch(`http://localhost:8000/api/datasets/${datasetId}/cleaning/`)
         .then(res => res.json())
         .then(data => {
@@ -54,9 +53,7 @@ export default function Datasets() {
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          // Remove the applied recommendation from UI
           setRecommendations(prev => prev.filter(r => r.recommendation_id !== recId));
-          // Refresh details to get new row/missing values counts
           fetch(`http://localhost:8000/api/datasets/${datasetId}/`)
             .then(res => res.json())
             .then(data => setDatasetDetails(data));
@@ -81,7 +78,6 @@ export default function Datasets() {
     })
     .then(res => res.json())
     .then(data => {
-      // Refresh the dataset list
       fetch('http://localhost:8000/api/datasets/')
         .then(res => res.json())
         .then(data => setDatasets(data));
@@ -95,128 +91,148 @@ export default function Datasets() {
       .then(() => navigate('/datasets'));
   };
 
-  const handleDeleteBulk = (deleteAll = false) => {
-    if (!confirm(deleteAll ? "Are you sure you want to delete ALL datasets?" : `Delete ${selectedIds.length} selected datasets?`)) return;
-    fetch('http://localhost:8000/api/datasets/', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ delete_all: deleteAll, ids: selectedIds })
-    }).then(() => {
-      setSelectedIds([]);
-      fetch('http://localhost:8000/api/datasets/')
-        .then(res => res.json())
-        .then(data => setDatasets(data));
-    });
-  };
-
   const handleGenerateReport = () => {
+    setGeneratingReport(true);
     fetch(`http://localhost:8000/api/datasets/${datasetId}/generate-report/`, { method: 'POST' })
       .then(res => res.json())
       .then(data => {
         if (data.report_id) {
           navigate(`/reports/${data.report_id}`);
+        } else {
+          setGeneratingReport(false);
         }
       })
-      .catch(err => console.error("Report generation error", err));
+      .catch(err => {
+        console.error("Report generation error", err);
+        setGeneratingReport(false);
+      });
   };
 
   if (datasetId) {
-    if (!datasetDetails) return <div className="p-8">Loading dataset...</div>;
+    if (!datasetDetails) return <div className="p-8 font-mono text-sm tracking-tight text-muted-foreground">INITIALIZING DATASET STREAM...</div>;
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-          <Link to="/datasets" className="hover:text-foreground transition-colors">Datasets</Link>
-          <ChevronRight size={16} />
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex items-center gap-2 text-[12px] text-muted-foreground font-mono font-semibold uppercase tracking-wider">
+          <Link to="/datasets" className="hover:text-primary transition-colors">Datasets</Link>
+          <ChevronRight size={14} />
           <span className="text-foreground">{datasetDetails.name}</span>
         </div>
 
-        <div className="flex justify-between items-end mb-8">
-          <h2 className="text-2xl font-bold tracking-tight">{datasetDetails.name}</h2>
-          <div className="flex gap-2">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-8 border-b border-border pb-6">
+          <div>
+            <h2 className="text-[40px] leading-tight font-medium tracking-tight mb-2">{datasetDetails.name}</h2>
+            <div className="flex items-center gap-3 font-mono text-sm text-muted-foreground">
+               <span className="bg-muted px-2 py-0.5 rounded border border-border">ID: {datasetDetails.id.split('_')[1] || datasetDetails.id}</span>
+               <span className="flex items-center gap-1.5 text-primary"><CheckCircle2 size={16} /> {datasetDetails.status}</span>
+            </div>
+          </div>
+          <div className="flex gap-3">
             <button 
               onClick={handleDeleteSingle}
-              className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-sm font-medium transition shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-background border border-border text-foreground hover:bg-destructive hover:text-destructive-foreground hover:border-destructive rounded-lg text-sm font-semibold transition-all shadow-sm"
             >
               <Trash2 size={16} />
-              Delete
+              Drop
             </button>
             <a 
               href={`http://localhost:8000/api/datasets/${datasetId}/export/`}
               download
-              className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-xl text-sm font-medium transition shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-background border border-border text-foreground hover:bg-muted rounded-lg text-sm font-semibold transition-all shadow-sm"
             >
               <Download size={16} />
-              Export CSV
+              Export
             </a>
             <button 
               onClick={handleGenerateReport}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-xl text-sm font-medium transition shadow-sm"
+              disabled={generatingReport}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground hover:opacity-90 rounded-lg text-sm font-semibold transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <PieChart size={16} />
-              Generate Report
+              {generatingReport ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <PieChart size={16} />
+                  Generate Blueprint
+                </>
+              )}
             </button>
           </div>
         </div>
         
-        <div className="bg-background border border-border rounded-3xl p-8 shadow-sm">
+        <div className="bg-card border border-border rounded-[16px] p-8 shadow-sm relative overflow-hidden">
+          {/* Subtle background grid pattern */}
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wNSkiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,white,transparent)] pointer-events-none opacity-50 dark:opacity-20" />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="p-6 bg-muted/30 rounded-2xl border border-border">
-              <div className="text-sm font-medium text-muted-foreground mb-1">Total Rows</div>
-              <div className="text-3xl font-bold">{datasetDetails.rows_count?.toLocaleString()}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative z-10">
+            <div className="p-6 bg-background rounded-[12px] border border-border shadow-sm flex flex-col group hover:border-primary/50 transition-colors">
+              <div className="text-[12px] font-mono font-semibold tracking-wider text-muted-foreground uppercase mb-3">Volume</div>
+              <div className="text-4xl font-medium tracking-tight mt-auto">{datasetDetails.rows_count?.toLocaleString()} <span className="text-xl text-muted-foreground ml-1">rows</span></div>
             </div>
-            <div className="p-6 bg-muted/30 rounded-2xl border border-border">
-              <div className="text-sm font-medium text-muted-foreground mb-1">Missing Values</div>
-              <div className="text-3xl font-bold">{datasetDetails.missing_values?.toLocaleString()}</div>
+            <div className="p-6 bg-background rounded-[12px] border border-border shadow-sm flex flex-col group hover:border-primary/50 transition-colors">
+              <div className="text-[12px] font-mono font-semibold tracking-wider text-muted-foreground uppercase mb-3">Integrity Issues</div>
+              <div className="text-4xl font-medium tracking-tight mt-auto">{datasetDetails.missing_values?.toLocaleString()} <span className="text-xl text-muted-foreground ml-1">nulls</span></div>
             </div>
-            <div className="p-6 bg-primary/5 rounded-2xl border border-primary/20">
-              <div className="text-sm font-medium text-primary/80 mb-1">Status</div>
-              <div className="text-xl font-bold text-primary flex items-center gap-2">
-                <CheckCircle2 size={20} />
-                {datasetDetails.status}
-              </div>
+            <div className="p-6 bg-primary text-primary-foreground rounded-[12px] shadow-sm flex flex-col">
+              <div className="text-[12px] font-mono font-semibold tracking-wider text-primary-foreground/70 uppercase mb-3">Schema Quality</div>
+              <div className="text-4xl font-medium tracking-tight mt-auto">{datasetDetails.columns_count} <span className="text-xl text-primary-foreground/70 ml-1">cols</span></div>
             </div>
           </div>
 
-          <h3 className="text-lg font-semibold mb-4 tracking-tight">AI Cleaning Recommendations</h3>
-          {recommendations.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No cleaning recommendations found. Your data looks good!</p>
-          ) : (
-            <ul className="space-y-3">
-              {recommendations.map(rec => (
-                <li key={rec.recommendation_id} className="flex justify-between items-center p-4 border border-border rounded-xl bg-card shadow-sm hover:shadow-md transition-shadow">
-                  <span className="text-sm text-muted-foreground">
-                    {rec.recommendation} <span className="font-semibold">({rec.issue})</span>
-                  </span>
-                  <button
-                    onClick={() => handleApplyRecommendation(rec.recommendation_id)}
-                    className="px-4 py-1.5 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-lg font-medium text-sm transition-colors"
-                  >
-                    Apply
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="relative z-10 mb-12">
+            <h3 className="text-lg font-medium tracking-tight mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+              Optimization Protocols
+            </h3>
+            {recommendations.length === 0 ? (
+              <div className="p-6 border border-border border-dashed rounded-[12px] bg-muted/50 flex items-center justify-center">
+                <p className="text-sm font-mono text-muted-foreground">SYSTEM: No anomalies detected. Schema is optimal.</p>
+              </div>
+            ) : (
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {recommendations.map(rec => (
+                  <li key={rec.recommendation_id} className="flex flex-col justify-between p-5 border border-border rounded-[12px] bg-background shadow-sm hover:shadow-md transition-shadow group">
+                    <div className="mb-4">
+                      <div className="text-[11px] font-mono uppercase tracking-wider text-destructive font-bold mb-2">Issue: {rec.issue}</div>
+                      <div className="text-sm text-foreground font-medium">{rec.recommendation}</div>
+                    </div>
+                    <button
+                      onClick={() => handleApplyRecommendation(rec.recommendation_id)}
+                      className="self-start px-4 py-2 bg-primary text-primary-foreground rounded-lg font-semibold text-xs transition-transform active:scale-95"
+                    >
+                      Execute Fix
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           
           {datasetDetails.preview_headers && datasetDetails.preview_headers.length > 0 && (
-            <div className="mt-10">
-              <h3 className="text-lg font-semibold mb-4 tracking-tight">Data Preview</h3>
-              <div className="overflow-x-auto border border-border rounded-xl">
+            <div className="relative z-10">
+              <div className="flex justify-between items-end mb-4">
+                <h3 className="text-lg font-medium tracking-tight">Data Fragment</h3>
+                <span className="text-[11px] font-mono text-muted-foreground uppercase">Top 5 Records</span>
+              </div>
+              <div className="overflow-x-auto border border-border rounded-[12px] shadow-sm">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-muted text-muted-foreground font-medium border-b border-border">
+                  <thead className="bg-muted text-foreground font-mono text-[12px] border-b border-border">
                     <tr>
                       {datasetDetails.preview_headers.map((header, i) => (
-                        <th key={i} className="px-4 py-3">{header}</th>
+                        <th key={i} className="px-5 py-3.5 whitespace-nowrap">{header}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-background">
                     {datasetDetails.preview_rows?.map((row, i) => (
                       <tr key={i} className="border-b border-border/50 last:border-0 hover:bg-muted/50 transition-colors">
                         {datasetDetails.preview_headers.map((header, j) => (
-                          <td key={j} className="px-4 py-3 max-w-xs truncate" title={String(row[header])}>{row[header]}</td>
+                          <td key={j} className="px-5 py-3 max-w-[200px] truncate font-mono text-[13px] text-muted-foreground" title={String(row[header])}>
+                            {row[header]}
+                          </td>
                         ))}
                       </tr>
                     ))}
@@ -231,30 +247,22 @@ export default function Datasets() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-end border-b border-border/50 pb-6">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-end border-b border-border pb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight mb-1">Datasets</h1>
-          <p className="text-muted-foreground text-sm">Manage your connected data sources.</p>
+          <h1 className="text-[48px] leading-[1.1] font-medium tracking-tight mb-2">Data Matrix</h1>
+          <p className="text-muted-foreground font-mono text-sm tracking-wide">Manage analytical schemas and connected sources.</p>
         </div>
         <div className="flex gap-3">
           {datasets.length > 0 && (
-            <>
-              {selectedIds.length > 0 && (
-                <button onClick={() => handleDeleteBulk(false)} className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 text-red-500 rounded-xl text-sm font-medium hover:bg-red-500 hover:text-white transition shadow-sm">
-                  <Trash2 size={18} />
-                  Delete Selected ({selectedIds.length})
-                </button>
-              )}
-              <button onClick={() => handleDeleteBulk(true)} className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 text-red-500 rounded-xl text-sm font-medium hover:bg-red-500 hover:text-white transition shadow-sm">
-                <Trash2 size={18} />
-                Delete All
-              </button>
-            </>
+            <button onClick={openDeleteModal} className="flex items-center gap-2 px-4 py-2.5 bg-background border border-border text-destructive hover:bg-destructive/10 rounded-lg text-sm font-semibold transition-all shadow-sm">
+              <Trash2 size={16} />
+              Manage Data
+            </button>
           )}
-          <button onClick={handleUploadClick} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition shadow-sm">
-            <UploadCloud size={18} />
-            Upload Data
+          <button onClick={handleUploadClick} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm">
+            <UploadCloud size={16} strokeWidth={2.5} />
+            Initialize Upload
           </button>
         </div>
         <input 
@@ -266,34 +274,45 @@ export default function Datasets() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {loading ? (
-          <div className="text-sm text-muted-foreground">Loading datasets...</div>
-        ) : datasets.map((dataset) => (
-          <div key={dataset.id} onClick={() => navigate(`/datasets/${dataset.id}`)} className="bg-background p-6 rounded-2xl border border-border hover:border-primary/50 hover:shadow-lg transition-all h-full flex flex-col relative overflow-hidden cursor-pointer group">
-            <div className="absolute top-4 right-4 z-20" onClick={(e) => e.stopPropagation()}>
-              <input 
-                type="checkbox" 
-                className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                checked={selectedIds.includes(dataset.id)}
-                onChange={(e) => {
-                  if (e.target.checked) setSelectedIds([...selectedIds, dataset.id]);
-                  else setSelectedIds(selectedIds.filter(id => id !== dataset.id));
-                }}
-              />
-            </div>
-            <div className="flex justify-between items-start mb-6 relative z-10">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
-                {dataset.name.includes('DB') ? <Database size={20} /> : <FileSpreadsheet size={20} />}
-              </div>
-              <span className="px-2.5 py-1 bg-muted rounded-full text-xs font-medium text-muted-foreground mr-8">
-                {dataset.status}
-              </span>
-            </div>
-            <h3 className="font-semibold text-base tracking-tight mb-1 relative z-10 group-hover:text-primary transition-colors">{dataset.name}</h3>
-            <p className="text-sm text-muted-foreground mt-auto relative z-10">{dataset.rows_count?.toLocaleString()} rows</p>
+          <div className="col-span-full py-20 flex justify-center items-center">
+            <div className="font-mono text-sm tracking-widest text-muted-foreground animate-pulse">ESTABLISHING CONNECTION...</div>
           </div>
-        ))}
+        ) : datasets.length === 0 ? (
+          <div className="col-span-full py-20 border border-dashed border-border rounded-[16px] flex flex-col items-center justify-center bg-card text-center px-4">
+            <Database size={48} className="text-muted-foreground/30 mb-4" />
+            <h3 className="text-lg font-medium tracking-tight mb-2">No Datasets Found</h3>
+            <p className="text-sm text-muted-foreground font-mono mb-6 max-w-sm">System awaits data ingestion. Initialize an upload to begin profiling protocols.</p>
+            <button onClick={handleUploadClick} className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90 transition-all shadow-sm">
+              Upload First Dataset
+            </button>
+          </div>
+        ) : (
+          datasets.map((dataset) => (
+            <div key={dataset.id} onClick={() => navigate(`/datasets/${dataset.id}`)} className="bg-card p-6 rounded-[16px] border border-border hover:border-primary/50 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:hover:shadow-[0_8px_30px_rgb(255,255,255,0.04)] transition-all h-full flex flex-col relative overflow-hidden cursor-pointer group">
+              <div className="flex justify-between items-start mb-10 relative z-10">
+                <div className="p-3 rounded-[8px] bg-background border border-border text-foreground group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-sm">
+                  {dataset.name.includes('DB') ? <Database size={20} /> : <FileSpreadsheet size={20} />}
+                </div>
+                <span className="px-2.5 py-1 bg-muted rounded-[4px] font-mono text-[10px] uppercase font-bold tracking-wider text-muted-foreground mr-6 border border-border group-hover:border-primary/30 transition-colors">
+                  {dataset.status}
+                </span>
+              </div>
+              <h3 className="font-medium text-xl tracking-tight mb-2 relative z-10 group-hover:text-primary transition-colors pr-4">{dataset.name}</h3>
+              <div className="flex items-center gap-4 mt-auto relative z-10 pt-4 border-t border-border/50">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-0.5">Rows</span>
+                  <span className="text-sm font-semibold">{dataset.rows_count?.toLocaleString()}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-0.5">Cols</span>
+                  <span className="text-sm font-semibold">{dataset.columns_count?.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
