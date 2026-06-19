@@ -1,3 +1,7 @@
 .agents
 skills-lock.json
 skill-lock.json
+
+# API Secrets
+backend/api/secrets.py
+__pycache__/

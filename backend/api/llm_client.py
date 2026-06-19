@@ -1,11 +1,15 @@
 import openai
-
 import os
+
+try:
+    from .secrets import OPENROUTER_API_KEY
+except ImportError:
+    OPENROUTER_API_KEY = None
 
 class OpenRouterClient:
     def __init__(self, base_url="https://openrouter.ai/api/v1", api_key=None):
         if not api_key:
-            api_key = os.environ.get("OPENROUTER_API_KEY", "your-api-key-here")
+            api_key = OPENROUTER_API_KEY or os.environ.get("OPENROUTER_API_KEY", "your-api-key-here")
         self.client = openai.OpenAI(
             base_url=base_url,
             api_key=api_key,

@@ -93,6 +93,58 @@ class DatasetListView(APIView):
                     action_type="drop_duplicates"
                 )
                 
+            # Advanced Profiling
+            for col in df.columns:
+                if pd.api.types.is_numeric_dtype(df[col]):
+                    q1 = df[col].quantile(0.25)
+                    q3 = df[col].quantile(0.75)
+                    iqr = q3 - q1
+                    lower_bound = q1 - 1.5 * iqr
+                    upper_bound = q3 + 1.5 * iqr
+                    outliers_count = int(((df[col] < lower_bound) | (df[col] > upper_bound)).sum())
+                    if outliers_count > 0:
+                        CleaningRecommendation.objects.create(
+                            dataset=new_ds,
+                            recommendation_id=f"clean_{col}_outliers",
+                            column=str(col),
+                            issue=f"{outliers_count} outliers detected",
+                            recommendation=f"Cap outliers to IQR bounds in '{col}'",
+                            action_type="handle_outliers"
+                        )
+                elif pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
+                    sample = df[col].dropna().head(20)
+                    if not sample.empty:
+                        # Try parsing dates
+                        try:
+                            # If at least 80% of the sample parses as datetime, suggest date standardizing
+                            parsed = pd.to_datetime(sample, errors='coerce')
+                            if parsed.notna().sum() / len(sample) >= 0.8:
+                                CleaningRecommendation.objects.create(
+                                    dataset=new_ds,
+                                    recommendation_id=f"clean_{col}_dates",
+                                    column=str(col),
+                                    issue="Raw or mixed date formats",
+                                    recommendation=f"Standardize '{col}' to YYYY-MM-DD format",
+                                    action_type="standardize_dates"
+                                )
+                                continue # Skip label checking if it's a date
+                        except Exception:
+                            pass
+                            
+                        # Check for label inconsistencies
+                        unique_vals = df[col].dropna().unique()
+                        if 0 < len(unique_vals) < 50:
+                            lower_vals = set([str(v).lower().strip() for v in unique_vals])
+                            if len(lower_vals) < len(unique_vals):
+                                CleaningRecommendation.objects.create(
+                                    dataset=new_ds,
+                                    recommendation_id=f"clean_{col}_labels",
+                                    column=str(col),
+                                    issue="Inconsistent casing/spacing in labels",
+                                    recommendation=f"Standardize text labels in '{col}'",
+                                    action_type="standardize_labels"
+                                )
+                
             if new_ds.recommendations.exists():
                 new_ds.status = "Needs Profiling"
             else:
@@ -330,6 +382,26 @@ class DatasetCleaningApplyView(APIView):
                 if df is not None and rec.column in df.columns:
                     mode_val = df[rec.column].mode()[0] if not df[rec.column].mode().empty else 'Unknown'
                     df[rec.column] = df[rec.column].fillna(mode_val)
+                    df.to_csv(file_path, index=False)
+                    
+            elif rec.action_type == "handle_outliers":
+                if df is not None and rec.column in df.columns:
+                    q1 = df[rec.column].quantile(0.25)
+                    q3 = df[rec.column].quantile(0.75)
+                    iqr = q3 - q1
+                    lower_bound = q1 - 1.5 * iqr
+                    upper_bound = q3 + 1.5 * iqr
+                    df[rec.column] = df[rec.column].clip(lower=lower_bound, upper=upper_bound)
+                    df.to_csv(file_path, index=False)
+                    
+            elif rec.action_type == "standardize_dates":
+                if df is not None and rec.column in df.columns:
+                    df[rec.column] = pd.to_datetime(df[rec.column], errors='coerce').dt.strftime('%Y-%m-%d')
+                    df.to_csv(file_path, index=False)
+                    
+            elif rec.action_type == "standardize_labels":
+                if df is not None and rec.column in df.columns:
+                    df[rec.column] = df[rec.column].astype(str).str.title().str.strip()
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "drop_duplicates":
