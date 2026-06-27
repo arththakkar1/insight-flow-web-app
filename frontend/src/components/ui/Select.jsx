@@ -49,7 +49,7 @@ export function CustomSelect({
 
       {isOpen && (
         <div className={cn(
-          "absolute left-0 right-0 z-50 mt-1.5 p-1 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-100",
+          "absolute left-0 right-0 z-50 mt-1.5 p-1 bg-card border border-border rounded-xl shadow-lg max-h-60 overflow-y-auto animate-in fade-in duration-100",
           optionsClassName
         )}>
           {options.length === 0 ? (

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { MessageSquare, Database, BarChart2, Settings, User, LogOut, Trash2 } from 'lucide-react';
+import { MessageSquare, Database, BarChart2, Settings, User, LogOut, Trash2, BrainCircuit } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import DeleteModal from './DeleteModal';
 import { isAuthenticated } from '../utils/api';
@@ -27,6 +27,7 @@ export default function ProtectedLayout() {
   const navItems = [
     { name: 'AI Assistant', path: '/chat', icon: MessageSquare },
     { name: 'Datasets', path: '/datasets', icon: Database },
+    { name: 'ML Models', path: '/ml-models', icon: BrainCircuit },
     { name: 'Reports', path: '/reports', icon: BarChart2 },
   ];
 
@@ -98,7 +99,7 @@ export default function ProtectedLayout() {
             
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#ff5577] hover:bg-[#ff5577]/10 transition-all text-left w-full mt-0.5"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#f10303] hover:bg-[#3d0d18] transition-all text-left w-full mt-0.5"
             >
               <Trash2 size={16} />
               Manage Data

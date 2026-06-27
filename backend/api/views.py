@@ -994,6 +994,23 @@ class DatasetGenerateMLReportView(APIView):
                 }
             ]
             
+            # Persist trained model + encoding metadata so predict endpoint can reuse it
+            import joblib, json
+            model_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model.pkl")
+            meta_path  = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model_meta.json")
+            joblib.dump(model, model_path)
+            model_meta = {
+                "feature_columns": features,
+                "target_column": target,
+                "task_type": task_type,
+                "model_type": model_type,
+                "feature_names_encoded": feature_names,
+                "cat_features": cat_features,
+                "target_classes": target_classes,
+            }
+            with open(meta_path, 'w') as f:
+                json.dump(model_meta, f)
+
             report_id = f"rep_{timezone.now().timestamp()}"
             report = Report.objects.create(
                 user=request.user,
@@ -1008,7 +1025,7 @@ class DatasetGenerateMLReportView(APIView):
                 dax_data=dax_data
             )
             
-            return Response({"report_id": report.id}, status=status.HTTP_201_CREATED)
+            return Response({"report_id": report.id, "model_trained": True}, status=status.HTTP_201_CREATED)
             
         except Dataset.DoesNotExist:
             return Response({"error": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -1016,3 +1033,117 @@ class DatasetGenerateMLReportView(APIView):
             import traceback
             traceback.print_exc()
             return Response({"error": f"Failed to train ML model: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MLModelPredictView(APIView):
+    """Run a single prediction against the last trained model for a dataset."""
+
+    def get(self, request, pk):
+        """Return whether a trained model exists for this dataset and its metadata."""
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+        except Dataset.DoesNotExist:
+            return Response({"error": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        import os, json
+        from django.conf import settings
+        meta_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model_meta.json")
+        if not os.path.exists(meta_path):
+            return Response({"model_exists": False})
+
+        with open(meta_path) as f:
+            meta = json.load(f)
+        return Response({"model_exists": True, "meta": meta})
+
+    def post(self, request, pk):
+        """Run a prediction. Body: { "input": { column: value, ... } }"""
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+        except Dataset.DoesNotExist:
+            return Response({"error": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        import os, json
+        import numpy as np
+        import joblib
+        from django.conf import settings
+
+        model_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model.pkl")
+        meta_path  = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model_meta.json")
+
+        if not os.path.exists(model_path) or not os.path.exists(meta_path):
+            return Response({"error": "No trained model found for this dataset. Train a model first."}, status=status.HTTP_404_NOT_FOUND)
+
+        with open(meta_path) as f:
+            meta = json.load(f)
+
+        user_input = request.data.get('input', {})
+        feature_columns   = meta['feature_columns']
+        feature_names_enc = meta['feature_names_encoded']
+        cat_features      = meta['cat_features']
+        task_type         = meta['task_type']
+        target_classes    = meta.get('target_classes', [])
+
+        # Validate all feature columns are provided
+        for col in feature_columns:
+            if col not in user_input:
+                return Response({"error": f"Missing value for feature column: '{col}'"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Build a one-row dataframe matching original feature columns
+        row = {col: [user_input[col]] for col in feature_columns}
+        row_df = pd.DataFrame(row)
+
+        # Convert numeric columns to float (frontend sends strings)
+        for col in feature_columns:
+            if col not in cat_features:
+                try:
+                    row_df[col] = row_df[col].astype(float)
+                except (ValueError, TypeError):
+                    pass  # leave as-is; model will fail gracefully
+
+        # Apply same dummy encoding
+        row_encoded = pd.get_dummies(row_df, columns=cat_features, drop_first=True)
+
+        # Align columns to training feature names (fill missing dummies with 0)
+        for col in feature_names_enc:
+            if col not in row_encoded.columns:
+                row_encoded[col] = 0
+        row_encoded = row_encoded[feature_names_enc]
+
+        model = joblib.load(model_path)
+        X_input = row_encoded.values
+
+        try:
+            raw_pred = model.predict(X_input)[0]
+        except Exception as e:
+            return Response({"error": f"Prediction failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        if task_type == 'classification':
+            if target_classes:
+                # raw_pred is an integer index
+                try:
+                    label = target_classes[int(raw_pred)]
+                except (IndexError, ValueError):
+                    label = str(raw_pred)
+            else:
+                label = str(raw_pred)
+            # Probability (if available)
+            confidence = None
+            if hasattr(model, 'predict_proba'):
+                try:
+                    proba = model.predict_proba(X_input)[0]
+                    confidence = round(float(np.max(proba)) * 100, 1)
+                except Exception:
+                    pass
+            return Response({
+                "prediction": label,
+                "task_type": "classification",
+                "confidence": confidence,
+                "target_column": meta['target_column'],
+            })
+        else:
+            return Response({
+                "prediction": round(float(raw_pred), 4),
+                "task_type": "regression",
+                "confidence": None,
+                "target_column": meta['target_column'],
+            })

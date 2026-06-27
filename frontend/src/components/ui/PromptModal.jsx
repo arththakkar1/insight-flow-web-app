@@ -26,18 +26,18 @@ export function PromptModal({
   const isConfirm = typeof onConfirm === 'function';
 
   let Icon = HelpCircle;
-  let iconColor = 'text-foreground bg-accent';
+  let iconColor = 'text-[#f10303] bg-accent';
   if (type === 'destructive') {
     Icon = AlertCircle;
-    iconColor = 'text-[#ff5577] bg-[#ff5577]/10';
+    iconColor = 'text-[#f10303] bg-[#3d0000] border-[#f10303]/40';
   } else if (type === 'success') {
     Icon = CheckCircle2;
-    iconColor = 'text-[#22c55e] bg-[#22c55e]/10';
+    iconColor = 'text-[#22c55e] bg-[#0a2e18] border-[#22c55e]/40';
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-      <div className="bg-card w-full max-w-md border border-border rounded-[20px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 backdrop-blur-sm animate-in fade-in duration-150 p-4">
+      <div className="bg-card w-full max-w-md border border-border rounded-[20px] shadow-2xl overflow-hidden animate-in fade-in duration-150">
         <div className="p-6 space-y-6">
           <div className="flex gap-4">
             <div className={cn("p-2.5 rounded-xl shrink-0 h-10 w-10 flex items-center justify-center border border-border/40", iconColor)}>
@@ -71,7 +71,7 @@ export function PromptModal({
               className={cn(
                 "px-5 py-2 rounded-full text-xs font-semibold transition-all active:scale-95",
                 type === 'destructive' 
-                  ? 'bg-[#ff5577] hover:opacity-90 text-white' 
+                  ? 'bg-[#f10303] hover:opacity-90 text-white' 
                   : type === 'success'
                     ? 'bg-[#22c55e] hover:opacity-90 text-white'
                     : 'bg-primary text-primary-foreground hover:opacity-90'

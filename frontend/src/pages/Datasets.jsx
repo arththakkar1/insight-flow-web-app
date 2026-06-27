@@ -228,7 +228,7 @@ export default function Datasets() {
       );
 
     return (
-      <div className="overflow-y-auto flex-1 min-h-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="overflow-y-auto flex-1 min-h-0 space-y-8 animate-in fade-in duration-200">
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-sans font-bold uppercase tracking-wider">
           <Link to="/datasets" className="hover:text-foreground transition-colors">
             Datasets
@@ -254,7 +254,7 @@ export default function Datasets() {
           <div className="flex gap-3">
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#ff5577] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#f10303] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
             >
               <Trash2 size={14} />
               Drop
@@ -362,150 +362,32 @@ export default function Datasets() {
             )}
           </div>
 
-          {/* Predictive ML Blueprint Builder */}
+          {/* ML Builder Launch Card */}
           <div className="relative z-10 mb-12 border-t border-border/60 pt-10">
-            <h3 className="text-base font-bold tracking-tight mb-2 flex items-center gap-2 text-foreground font-sans">
-              <span className="w-2 h-2 bg-[#0099ff] rounded-full animate-pulse"></span>
-              Predictive ML Blueprint Builder
-            </h3>
-            <p className="text-xs text-muted-foreground font-sans mb-6">
-              Configure parameters to train a machine learning model on your dataset and generate diagnostics reports.
-            </p>
-            
-            <form onSubmit={handleTrainMLModel} className="space-y-6 max-w-4xl">
-              {mlError && (
-                <div className="p-3 bg-[#ff5577]/10 border border-[#ff5577]/20 text-[#ff5577] rounded-md text-xs font-semibold font-sans">
-                  {mlError}
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Feature Columns Selection */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-muted-foreground font-sans">
-                    Feature Columns (X)
-                  </label>
-                  <div className="border border-border rounded-md p-3.5 bg-background max-h-48 overflow-y-auto space-y-2">
-                    {columns.length === 0 ? (
-                      <span className="text-xs text-muted-foreground font-mono font-medium uppercase">No columns profile loaded</span>
-                    ) : (
-                      columns.map(col => (
-                        <label 
-                          key={col.name} 
-                          className={cn(
-                            "flex items-center gap-2.5 cursor-pointer text-xs font-medium text-foreground select-none group",
-                            selectedTarget === col.name && "opacity-40 cursor-not-allowed"
-                          )}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedFeatures.includes(col.name)}
-                            disabled={selectedTarget === col.name}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedFeatures(prev => [...prev, col.name]);
-                              } else {
-                                setSelectedFeatures(prev => prev.filter(name => name !== col.name));
-                              }
-                            }}
-                            className="hidden"
-                          />
-                          <div className={cn(
-                            "relative flex items-center justify-center w-4 h-4 border rounded-[5px] transition-all shrink-0",
-                            selectedFeatures.includes(col.name) 
-                              ? 'bg-[#0099ff] border-[#0099ff] text-white' 
-                              : 'bg-background border-border text-transparent group-hover:border-foreground/50'
-                          )}>
-                            <svg className="w-2.5 h-2.5 stroke-[3.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                          <span className={selectedTarget === col.name ? 'text-muted-foreground/40 line-through font-sans' : 'font-sans'}>
-                            {col.name} <span className="text-muted-foreground text-[10px] font-mono">({col.type})</span>
-                          </span>
-                        </label>
-                      ))
-                    )}
+            <div className="bg-gradient-to-br from-[#6a4cf5] to-[#0099ff] rounded-[20px] p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-lg overflow-hidden">
+              {/* Background glow */}
+              <div className="absolute inset-0 opacity-20" style={{background: 'radial-gradient(ellipse at 80% 50%, #d44df0 0%, transparent 60%)'}} />
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 bg-white/15 rounded-xl">
+                    <BrainCircuit size={18} className="text-white" />
                   </div>
+                  <h3 className="text-base font-bold tracking-tight text-white font-sans">ML Model Builder</h3>
                 </div>
-
-                {/* Target Column, Model & Task Types */}
-                <div className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="block text-xs font-semibold text-muted-foreground font-sans">
-                      Predicted Target Column (y)
-                    </label>
-                    <CustomSelect
-                      value={selectedTarget}
-                      onChange={(val) => {
-                        setSelectedTarget(val);
-                        setSelectedFeatures(prev => prev.filter(name => name !== val));
-                      }}
-                      placeholder="Select target column..."
-                      options={columns.map(col => ({ value: col.name, label: `${col.name} (${col.type})` }))}
-                      triggerClassName="py-2 text-xs rounded-full px-4"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-muted-foreground font-sans">
-                        Task Type
-                      </label>
-                      <CustomSelect
-                        value={taskType}
-                        onChange={(val) => setTaskType(val)}
-                        options={[
-                          { value: "auto", label: "Auto-detect" },
-                          { value: "classification", label: "Classification" },
-                          { value: "regression", label: "Regression" }
-                        ]}
-                        triggerClassName="py-2 text-xs rounded-full px-4"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-xs font-semibold text-muted-foreground font-sans">
-                        Model Type
-                      </label>
-                      <CustomSelect
-                        value={selectedModel}
-                        onChange={(val) => setSelectedModel(val)}
-                        options={[
-                          { value: "random_forest", label: "Random Forest" },
-                          { value: "decision_tree", label: "Decision Tree" },
-                          ...(taskType === 'regression' || (taskType === 'auto' && columns.find(c => c.name === selectedTarget)?.type !== 'object') ? [
-                            { value: "linear_regression", label: "Linear Regression" }
-                          ] : [
-                            { value: "logistic_regression", label: "Logistic Regression" }
-                          ])
-                        ]}
-                        triggerClassName="py-2 text-xs rounded-full px-4"
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={trainingModel}
-                    className="w-full py-2.5 bg-primary text-primary-foreground rounded-full font-semibold text-xs hover:opacity-90 active:scale-[0.98] transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {trainingModel ? (
-                      <>
-                        <Loader2 size={12} className="animate-spin" />
-                        Training Model...
-                      </>
-                    ) : (
-                      <>
-                        <BrainCircuit size={12} />
-                        Train & Generate ML Blueprint
-                      </>
-                    )}
-                  </button>
-                </div>
+                <p className="text-sm text-white/75 font-sans leading-relaxed max-w-md">
+                  Train machine learning models, evaluate feature importances, and run live predictions — all in one place.
+                </p>
               </div>
-            </form>
+              <button
+                onClick={() => navigate(`/ml-builder/${datasetId}`)}
+                className="relative z-10 flex items-center gap-2 px-6 py-3 bg-white text-[#6a4cf5] rounded-full text-sm font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-sm whitespace-nowrap shrink-0"
+              >
+                <BrainCircuit size={15} />
+                Launch ML Builder
+              </button>
+            </div>
           </div>
+
 
           {datasetDetails.preview_headers &&
             datasetDetails.preview_headers.length > 0 && (
@@ -566,7 +448,7 @@ export default function Datasets() {
   }
 
   return (
-    <div className="overflow-y-auto flex-1 min-h-0 space-y-8 animate-in fade-in duration-500">
+    <div className="overflow-y-auto flex-1 min-h-0 space-y-8 animate-in fade-in duration-200">
       <div className="flex flex-col md:flex-row md:justify-between md:items-end border-b border-border pb-6 gap-4">
         <div>
           <h1 className="text-3xl font-medium tracking-tight text-foreground mb-1 font-sans">
@@ -580,7 +462,7 @@ export default function Datasets() {
           {datasets.length > 0 && (
             <button
               onClick={openDeleteModal}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#ff5577] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#f10303] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
             >
               <Trash2 size={14} />
               Manage Data

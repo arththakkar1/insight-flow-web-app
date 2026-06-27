@@ -3,7 +3,7 @@ from .views import (
     CookieLoginView, CookieLogoutView, AuthCheckView,
     ChatMessageView, DatasetListView, DatasetDetailView, DatasetProfileView,
     DatasetCleaningView, DatasetCleaningApplyView, DatasetExportView,
-    DatasetGenerateReportView, DatasetGenerateMLReportView,
+    DatasetGenerateReportView, DatasetGenerateMLReportView, MLModelPredictView,
     ReportListView, ReportDetailView, ReportExportView,
     ModelSuggestionsView, DaxGeneratorView, RegisterView
 )
@@ -22,6 +22,7 @@ urlpatterns = [
     path('datasets/<str:pk>/export/', DatasetExportView.as_view(), name='dataset-export'),
     path('datasets/<str:pk>/generate-report/', DatasetGenerateReportView.as_view(), name='dataset-generate-report'),
     path('datasets/<str:pk>/generate-ml-report/', DatasetGenerateMLReportView.as_view(), name='dataset-generate-ml-report'),
+    path('datasets/<str:pk>/predict/', MLModelPredictView.as_view(), name='dataset-predict'),
     path('datasets/model-suggestions/', ModelSuggestionsView.as_view(), name='model-suggestions'),
     path('analytics/dax-generator/', DaxGeneratorView.as_view(), name='dax-generator'),
     path('reports/', ReportListView.as_view(), name='report-list'),

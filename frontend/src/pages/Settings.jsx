@@ -22,7 +22,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="max-w-3xl pb-10 space-y-8 animate-in fade-in duration-500">
+    <div className="max-w-3xl pb-10 space-y-8 animate-in fade-in duration-200">
       <div className="border-b border-border pb-6">
         <h1 className="text-3xl font-medium tracking-tight mb-1 text-foreground font-sans">Settings</h1>
         <p className="text-muted-foreground text-xs font-sans">Manage your workspace preferences and LLM connection properties.</p>
@@ -32,7 +32,7 @@ export default function Settings() {
         {/* AI Configuration Section */}
         <section className="p-6 bg-card border border-border rounded-[20px] shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-primary/10 text-primary rounded-lg">
+            <div className="p-2 bg-accent border border-border text-foreground rounded-lg">
               <Zap size={18} />
             </div>
             <h2 className="text-sm font-bold tracking-tight text-foreground font-sans">AI Configuration</h2>
@@ -61,7 +61,7 @@ export default function Settings() {
         {/* Application Preferences Section */}
         <section className="p-6 bg-card border border-border rounded-[20px] shadow-sm">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-primary/10 text-primary rounded-lg">
+            <div className="p-2 bg-accent border border-border text-foreground rounded-lg">
               <Settings2 size={18} />
             </div>
             <h2 className="text-sm font-bold tracking-tight text-foreground font-sans">Application Preferences</h2>

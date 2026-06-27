@@ -12,6 +12,8 @@ import Datasets from './pages/Datasets';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Profile from './pages/Profile';
+import MLBuilder from './pages/MLBuilder';
+import MLModels from './pages/MLModels';
 import { ThemeProvider } from './components/ThemeProvider';
 
 export default function App() {
@@ -26,7 +28,6 @@ export default function App() {
 
         {/* Protected Routes inside Layout */}
         <Route element={<ProtectedLayout />}>
-          {/* Redirect dashboard to datasets for now, as dashboard wasn't explicitly requested but datasets is the main view */}
           <Route path="/dashboard" element={<Navigate to="/datasets" replace />} />
           
           <Route path="/chat" element={<Chat />} />
@@ -34,6 +35,11 @@ export default function App() {
           
           <Route path="/datasets" element={<Datasets />} />
           <Route path="/datasets/:datasetId" element={<Datasets />} />
+          
+          <Route path="/ml-builder/:datasetId" element={<MLBuilder />} />
+          
+          <Route path="/ml-models" element={<MLModels />} />
+          <Route path="/ml-models/:modelId" element={<MLModels />} />
           
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:reportId" element={<Reports />} />
@@ -49,3 +55,4 @@ export default function App() {
     </ThemeProvider>
   );
 }
+
