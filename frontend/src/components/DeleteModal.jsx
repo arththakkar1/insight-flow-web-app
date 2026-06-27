@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import { useState, useEffect } from 'react';
 import { X, Trash2, CheckCircle2, Database, BarChart2, Loader2 } from 'lucide-react';
 
@@ -13,8 +14,8 @@ export default function DeleteModal({ isOpen, onClose }) {
     if (isOpen) {
       setLoading(true);
       Promise.all([
-        fetch('http://localhost:8000/api/datasets/').then(res => res.json()),
-        fetch('http://localhost:8000/api/reports/').then(res => res.json())
+        apiFetch('http://localhost:8000/api/datasets/').then(res => res.json()),
+        apiFetch('http://localhost:8000/api/reports/').then(res => res.json())
       ]).then(([dsData, repData]) => {
         setDatasets(dsData || []);
         setReports(repData || []);
@@ -56,14 +57,14 @@ export default function DeleteModal({ isOpen, onClose }) {
     try {
       const promises = [];
       if (selectedDatasets.length > 0) {
-        promises.push(fetch('http://localhost:8000/api/datasets/', {
+        promises.push(apiFetch('http://localhost:8000/api/datasets/', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ delete_all: false, ids: selectedDatasets })
         }));
       }
       if (selectedReports.length > 0) {
-        promises.push(fetch('http://localhost:8000/api/reports/', {
+        promises.push(apiFetch('http://localhost:8000/api/reports/', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ delete_all: false, ids: selectedReports })

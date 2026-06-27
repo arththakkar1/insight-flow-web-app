@@ -1,6 +1,8 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Dataset(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     id = models.CharField(max_length=50, primary_key=True)
     name = models.CharField(max_length=255)
     rows_count = models.IntegerField(default=0)
@@ -35,6 +37,7 @@ class CleaningRecommendation(models.Model):
         return f"{self.dataset.name} - {self.recommendation_id}"
 
 class Report(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     id = models.CharField(max_length=50, primary_key=True)
     title = models.CharField(max_length=255)
     dataset = models.CharField(max_length=255)

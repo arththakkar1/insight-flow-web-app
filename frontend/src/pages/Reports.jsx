@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/api';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { PieChart, LineChart, BarChart, ChevronRight, FileText, Trash2 } from 'lucide-react';
@@ -11,7 +12,7 @@ export default function Reports() {
   const { openDeleteModal } = useOutletContext() || {};
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/reports/')
+    apiFetch('http://localhost:8000/api/reports/')
       .then(res => res.json())
       .then(data => {
         setReports(data);
@@ -25,7 +26,7 @@ export default function Reports() {
 
   useEffect(() => {
     if (reportId) {
-      fetch(`http://localhost:8000/api/reports/${reportId}/`)
+      apiFetch(`http://localhost:8000/api/reports/${reportId}/`)
         .then(res => res.json())
         .then(data => setReportDetails(data));
     }
@@ -33,7 +34,7 @@ export default function Reports() {
 
   const handleDeleteSingle = () => {
     if (!confirm("Are you sure you want to delete this report?")) return;
-    fetch(`http://localhost:8000/api/reports/${reportId}/`, { method: 'DELETE' })
+    apiFetch(`http://localhost:8000/api/reports/${reportId}/`, { method: 'DELETE' })
       .then(() => navigate('/reports'));
   };
 
@@ -96,7 +97,7 @@ export default function Reports() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="p-10 max-w-[1400px] mx-auto space-y-8">
       <div className="flex justify-between items-end border-b border-border/50 pb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight mb-1">Saved Reports</h1>

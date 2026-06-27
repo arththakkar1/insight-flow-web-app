@@ -1,13 +1,18 @@
 from django.urls import path
 from .views import (
+    CookieLoginView, CookieLogoutView, AuthCheckView,
     ChatMessageView, DatasetListView, DatasetDetailView, DatasetProfileView,
     DatasetCleaningView, DatasetCleaningApplyView, DatasetExportView,
     DatasetGenerateReportView,
     ReportListView, ReportDetailView, ReportExportView,
-    ModelSuggestionsView, DaxGeneratorView
+    ModelSuggestionsView, DaxGeneratorView, RegisterView
 )
 
 urlpatterns = [
+    path('auth/login/',   CookieLoginView.as_view(),  name='cookie-login'),
+    path('auth/logout/',  CookieLogoutView.as_view(), name='cookie-logout'),
+    path('auth/check/',   AuthCheckView.as_view(),    name='auth-check'),
+    path('register/', RegisterView.as_view(), name='register'),
     path('chat/messages/', ChatMessageView.as_view(), name='chat-messages'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     path('datasets/<str:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),

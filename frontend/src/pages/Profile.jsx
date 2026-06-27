@@ -2,7 +2,7 @@ import { User, Mail, Building, Edit2 } from 'lucide-react';
 
 export default function Profile() {
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="max-w-4xl space-y-8 p-10">
       <div className="border-b border-border/50 pb-6">
         <h1 className="text-3xl font-bold tracking-tight mb-1">User Profile</h1>
         <p className="text-muted-foreground text-sm">View and manage your personal info.</p>

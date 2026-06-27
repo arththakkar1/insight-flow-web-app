@@ -1,12 +1,29 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { MessageSquare, Database, BarChart2, Settings, User, LogOut, Trash2 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import DeleteModal from './DeleteModal';
+import { isAuthenticated } from '../utils/api';
 
 export default function ProtectedLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const token = isAuthenticated();
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const handleLogout = async () => {
+    await fetch('http://localhost:8000/api/auth/logout/', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => {});
+    // Clear the frontend flag cookie
+    document.cookie = 'is_authenticated=; path=/; max-age=0';
+    navigate('/login');
+  };
 
   const navItems = [
     { name: 'AI Assistant', path: '/chat', icon: MessageSquare },
@@ -87,26 +104,30 @@ export default function ProtectedLayout() {
             </button>
             
             <div className="flex items-center justify-between px-3 py-2 mt-4 pt-4 border-t border-border">
-              <Link
-                to="/login"
-                className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors"
               >
                 <LogOut size={18} />
                 Log Out
-              </Link>
+              </button>
               <ThemeToggle />
             </div>
           </div>
         </div>
       </aside>
 
-      {/* Main Content - Modular Panel */}
-      <main className="flex-1 flex flex-col bg-background border border-border rounded-[16px] shadow-sm overflow-hidden relative">
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-10 h-full max-w-[1400px] mx-auto">
-            <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
+      {/* Main Content */}
+      <main className="flex-1 min-h-0 flex flex-col bg-background border border-border rounded-[16px] shadow-sm overflow-hidden relative">
+        {location.pathname.startsWith('/chat') ? (
+          <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
+        ) : (
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <div className="p-6 max-w-[1400px] mx-auto">
+              <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <DeleteModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} />

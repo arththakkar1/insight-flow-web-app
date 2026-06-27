@@ -8,9 +8,84 @@ import pandas as pd
 
 
 
+
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+from datetime import timedelta
+
+ACCESS_COOKIE_AGE  = 60 * 60 * 24        # 1 day
+REFRESH_COOKIE_AGE = 60 * 60 * 24 * 7    # 7 days
+
+def _set_auth_cookies(response, user):
+    """Set HttpOnly JWT cookies + a readable flag cookie for the frontend."""
+    refresh = RefreshToken.for_user(user)
+    cookie_kwargs = dict(httponly=False, secure=False, samesite='Lax', path='/')
+
+    response.set_cookie('access_token',  str(refresh.access_token),
+                        max_age=ACCESS_COOKIE_AGE,  httponly=True,
+                        secure=False, samesite='Lax', path='/')
+    response.set_cookie('refresh_token', str(refresh),
+                        max_age=REFRESH_COOKIE_AGE, httponly=True,
+                        secure=False, samesite='Lax', path='/')
+    # Non-HttpOnly flag so JS can check auth state without an API call
+    response.set_cookie('is_authenticated', '1',
+                        max_age=ACCESS_COOKIE_AGE, **cookie_kwargs)
+    return response
+
+def _clear_auth_cookies(response):
+    for name in ('access_token', 'refresh_token', 'is_authenticated'):
+        response.delete_cookie(name, path='/')
+    return response
+
+
+class CookieLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        response = Response({'success': True, 'username': user.username})
+        return _set_auth_cookies(response, user)
+
+
+class CookieLogoutView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        response = Response({'success': True})
+        return _clear_auth_cookies(response)
+
+
+class AuthCheckView(APIView):
+    """Returns 200 if the request is authenticated, 401 otherwise."""
+    def get(self, request):
+        return Response({'authenticated': True, 'username': request.user.username})
+
+
+class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        if not username or not password:
+            return Response({'error': 'Username and password required'}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already taken'}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.create_user(username=username, password=password)
+        # Auto-login after registration
+        response = Response({'message': 'User created'}, status=status.HTTP_201_CREATED)
+        return _set_auth_cookies(response, user)
+
+
 class DatasetListView(APIView):
     def get(self, request):
-        datasets = Dataset.objects.all().values()
+        datasets = Dataset.objects.filter(user=request.user).values()
         return Response(list(datasets))
 
     def post(self, request):
@@ -31,7 +106,7 @@ class DatasetListView(APIView):
             missing_values = int(df.isnull().sum().sum())
             duplicate_rows = int(df.duplicated().sum())
             
-            new_ds = Dataset.objects.create(
+            new_ds = Dataset.objects.create(user=request.user, 
                 id=f"ds_{timezone.now().timestamp()}",
                 name=file_obj.name,
                 rows_count=rows_count,
@@ -41,122 +116,122 @@ class DatasetListView(APIView):
                 duplicate_rows=duplicate_rows
             )
             
-            # Profile columns
-            for col in df.columns:
-                dtype = str(df[col].dtype)
-                if 'int' in dtype:
-                    col_type = 'integer'
-                elif 'float' in dtype:
-                    col_type = 'float'
-                elif 'datetime' in dtype:
-                    col_type = 'datetime'
-                else:
-                    col_type = 'string'
-                    
-                DatasetColumn.objects.create(
-                    dataset=new_ds,
-                    name=str(col),
-                    type=col_type,
-                    unique_values=int(df[col].nunique()),
-                    missing_count=int(df[col].isnull().sum())
-                )
-                
-            # Generate cleaning recommendations
-            if missing_values > 0:
-                for col in df.columns[df.isnull().any()]:
-                    missing_cnt = int(df[col].isnull().sum())
-                    if 'int' in str(df[col].dtype) or 'float' in str(df[col].dtype):
-                        median_val = df[col].median()
-                        rec = f"Fill missing values with median ({median_val})"
-                        action = "fill_median"
-                    else:
-                        mode_val = df[col].mode()[0] if not df[col].mode().empty else 'Unknown'
-                        rec = f"Fill missing values with mode ({mode_val})"
-                        action = "fill_mode"
-                        
-                    CleaningRecommendation.objects.create(
-                        dataset=new_ds,
-                        recommendation_id=f"clean_{col}_missing",
-                        column=str(col),
-                        issue=f"{missing_cnt} missing values",
-                        recommendation=rec,
-                        action_type=action
-                    )
-                    
-            if duplicate_rows > 0:
-                CleaningRecommendation.objects.create(
-                    dataset=new_ds,
-                    recommendation_id="clean_drop_duplicates",
-                    column="all",
-                    issue=f"{duplicate_rows} duplicate rows found",
-                    recommendation="Remove duplicate entries",
-                    action_type="drop_duplicates"
-                )
-                
-            # Advanced Profiling
-            for col in df.columns:
-                if pd.api.types.is_numeric_dtype(df[col]):
-                    q1 = df[col].quantile(0.25)
-                    q3 = df[col].quantile(0.75)
-                    iqr = q3 - q1
-                    lower_bound = q1 - 1.5 * iqr
-                    upper_bound = q3 + 1.5 * iqr
-                    outliers_count = int(((df[col] < lower_bound) | (df[col] > upper_bound)).sum())
-                    if outliers_count > 0:
-                        CleaningRecommendation.objects.create(
-                            dataset=new_ds,
-                            recommendation_id=f"clean_{col}_outliers",
-                            column=str(col),
-                            issue=f"{outliers_count} outliers detected",
-                            recommendation=f"Cap outliers to IQR bounds in '{col}'",
-                            action_type="handle_outliers"
-                        )
-                elif pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
-                    sample = df[col].dropna().head(20)
-                    if not sample.empty:
-                        # Try parsing dates
-                        try:
-                            # If at least 80% of the sample parses as datetime, suggest date standardizing
-                            parsed = pd.to_datetime(sample, errors='coerce')
-                            if parsed.notna().sum() / len(sample) >= 0.8:
-                                CleaningRecommendation.objects.create(
-                                    dataset=new_ds,
-                                    recommendation_id=f"clean_{col}_dates",
-                                    column=str(col),
-                                    issue="Raw or mixed date formats",
-                                    recommendation=f"Standardize '{col}' to YYYY-MM-DD format",
-                                    action_type="standardize_dates"
-                                )
-                                continue # Skip label checking if it's a date
-                        except Exception:
-                            pass
-                            
-                        # Check for label inconsistencies
-                        unique_vals = df[col].dropna().unique()
-                        if 0 < len(unique_vals) < 50:
-                            lower_vals = set([str(v).lower().strip() for v in unique_vals])
-                            if len(lower_vals) < len(unique_vals):
-                                CleaningRecommendation.objects.create(
-                                    dataset=new_ds,
-                                    recommendation_id=f"clean_{col}_labels",
-                                    column=str(col),
-                                    issue="Inconsistent casing/spacing in labels",
-                                    recommendation=f"Standardize text labels in '{col}'",
-                                    action_type="standardize_labels"
-                                )
-                
-            if new_ds.recommendations.exists():
-                new_ds.status = "Needs Profiling"
-            else:
-                new_ds.status = "Cleaned"
-            new_ds.save()
-            
-            # Save the dataframe to a media directory to preserve the real data!
+            # Save the dataframe to a media directory IMMEDIATELY
             import os
             from django.conf import settings
             media_dir = os.path.join(settings.BASE_DIR, 'media')
             os.makedirs(media_dir, exist_ok=True)
             df.to_csv(os.path.join(media_dir, f"{new_ds.id}.csv"), index=False)
+            
+            try:
+                # Profile columns
+                for col in df.columns:
+                    dtype = str(df[col].dtype)
+                    if 'int' in dtype:
+                        col_type = 'integer'
+                    elif 'float' in dtype:
+                        col_type = 'float'
+                    elif 'datetime' in dtype:
+                        col_type = 'datetime'
+                    else:
+                        col_type = 'string'
+                        
+                    DatasetColumn.objects.create(
+                        dataset=new_ds,
+                        name=str(col),
+                        type=col_type,
+                        unique_values=int(df[col].nunique()),
+                        missing_count=int(df[col].isnull().sum())
+                    )
+                    
+                # Generate cleaning recommendations
+                if missing_values > 0:
+                    for col in df.columns[df.isnull().any()]:
+                        missing_cnt = int(df[col].isnull().sum())
+                        if 'int' in str(df[col].dtype) or 'float' in str(df[col].dtype):
+                            median_val = df[col].median()
+                            rec = f"Fill missing values with median ({median_val})"
+                            action = "fill_median"
+                        else:
+                            mode_val = df[col].mode()[0] if not df[col].mode().empty else 'Unknown'
+                            rec = f"Fill missing values with mode ({mode_val})"
+                            action = "fill_mode"
+                            
+                        CleaningRecommendation.objects.create(
+                            dataset=new_ds,
+                            recommendation_id=f"clean_{col}_missing",
+                            column=str(col),
+                            issue=f"{missing_cnt} missing values",
+                            recommendation=rec,
+                            action_type=action
+                        )
+                        
+                if duplicate_rows > 0:
+                    CleaningRecommendation.objects.create(
+                        dataset=new_ds,
+                        recommendation_id="clean_drop_duplicates",
+                        column="all",
+                        issue=f"{duplicate_rows} duplicate rows found",
+                        recommendation="Remove duplicate entries",
+                        action_type="drop_duplicates"
+                    )
+                    
+                # Advanced Profiling
+                for col in df.columns:
+                    if pd.api.types.is_numeric_dtype(df[col]):
+                        q1 = df[col].quantile(0.25)
+                        q3 = df[col].quantile(0.75)
+                        iqr = q3 - q1
+                        lower_bound = q1 - 1.5 * iqr
+                        upper_bound = q3 + 1.5 * iqr
+                        outliers_count = int(((df[col] < lower_bound) | (df[col] > upper_bound)).sum())
+                        if outliers_count > 0:
+                            CleaningRecommendation.objects.create(
+                                dataset=new_ds,
+                                recommendation_id=f"clean_{col}_outliers",
+                                column=str(col),
+                                issue=f"{outliers_count} outliers detected",
+                                recommendation=f"Cap outliers to IQR bounds in '{col}'",
+                                action_type="handle_outliers"
+                            )
+                    elif pd.api.types.is_string_dtype(df[col]) or pd.api.types.is_object_dtype(df[col]):
+                        sample = df[col].dropna().head(20)
+                        if not sample.empty:
+                            try:
+                                parsed = pd.to_datetime(sample, errors='coerce')
+                                if parsed.notna().sum() / len(sample) >= 0.8:
+                                    CleaningRecommendation.objects.create(
+                                        dataset=new_ds,
+                                        recommendation_id=f"clean_{col}_dates",
+                                        column=str(col),
+                                        issue="Raw or mixed date formats",
+                                        recommendation=f"Standardize '{col}' to YYYY-MM-DD format",
+                                        action_type="standardize_dates"
+                                    )
+                                    continue
+                            except Exception:
+                                pass
+                                
+                            unique_vals = df[col].dropna().unique()
+                            if 0 < len(unique_vals) < 50:
+                                lower_vals = set([str(v).lower().strip() for v in unique_vals])
+                                if len(lower_vals) < len(unique_vals):
+                                    CleaningRecommendation.objects.create(
+                                        dataset=new_ds,
+                                        recommendation_id=f"clean_{col}_labels",
+                                        column=str(col),
+                                        issue="Inconsistent casing/spacing in labels",
+                                        recommendation=f"Standardize text labels in '{col}'",
+                                        action_type="standardize_labels"
+                                    )
+            except Exception as e:
+                print(f"Profiling error for {new_ds.id}: {e}")
+                
+            if new_ds.recommendations.exists():
+                new_ds.status = "Needs Profiling"
+            else:
+                new_ds.status = "Cleaned" if new_ds.missing_values == 0 else "Needs Profiling"
+            new_ds.save()
             
             return Response({"id": new_ds.id, "name": new_ds.name, "status": new_ds.status}, status=status.HTTP_201_CREATED)
             
@@ -171,9 +246,9 @@ class DatasetListView(APIView):
         from django.conf import settings
         
         if delete_all:
-            datasets = Dataset.objects.all()
+            datasets = Dataset.objects.filter(user=request.user)
         else:
-            datasets = Dataset.objects.filter(id__in=ids)
+            datasets = Dataset.objects.filter(user=request.user, id__in=ids)
             
         for dataset in datasets:
             file_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}.csv")
@@ -186,7 +261,7 @@ class DatasetListView(APIView):
 class DatasetDetailView(APIView):
     def get(self, request, pk):
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             
             import os
             import pandas as pd
@@ -231,7 +306,7 @@ class DatasetDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             import os
             from django.conf import settings
             file_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}.csv")
@@ -245,7 +320,7 @@ class DatasetDetailView(APIView):
 class DatasetGenerateReportView(APIView):
     def post(self, request, pk):
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             from django.utils import timezone
             
             columns = list(dataset.columns.all())
@@ -311,7 +386,7 @@ class DatasetGenerateReportView(APIView):
                     dax_data = [{"name": "Row Count", "formula": f"COUNTROWS('{dataset.name}')"}]
                     
             report_id = f"rep_{timezone.now().timestamp()}"
-            report = Report.objects.create(
+            report = Report.objects.create(user=request.user, 
                 id=report_id,
                 title=f"{dataset.name} Dashboard",
                 dataset=dataset.name,
@@ -329,7 +404,7 @@ class DatasetProfileView(APIView):
     def post(self, request, pk):
         # Returns column profiles
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             columns = list(dataset.columns.values('name', 'type', 'unique_values', 'missing_count'))
             return Response({
                 "dataset_id": dataset.id,
@@ -345,7 +420,7 @@ class DatasetProfileView(APIView):
 class DatasetCleaningView(APIView):
     def get(self, request, pk):
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             recs = list(dataset.recommendations.values('recommendation_id', 'column', 'issue', 'recommendation', 'action_type'))
             return Response({
                 "dataset_id": dataset.id,
@@ -359,7 +434,7 @@ class DatasetCleaningApplyView(APIView):
     def post(self, request, pk):
         rec_id = request.data.get('recommendation_id')
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             rec = CleaningRecommendation.objects.get(dataset=dataset, recommendation_id=rec_id)
             
             # Apply logic: update dataset stats and delete recommendation
@@ -367,24 +442,26 @@ class DatasetCleaningApplyView(APIView):
             import pandas as pd
             from django.conf import settings
             file_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}.csv")
-            df = None
-            if os.path.exists(file_path):
-                df = pd.read_csv(file_path)
+            
+            if not os.path.exists(file_path):
+                return Response({"error": "Dataset file not found on server"}, status=status.HTTP_404_NOT_FOUND)
+                
+            df = pd.read_csv(file_path)
                 
             if rec.action_type == "fill_median":
-                if df is not None and rec.column in df.columns:
+                if rec.column in df.columns:
                     if pd.api.types.is_numeric_dtype(df[rec.column]):
                         df[rec.column] = df[rec.column].fillna(df[rec.column].median())
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "fill_mode":
-                if df is not None and rec.column in df.columns:
+                if rec.column in df.columns:
                     mode_val = df[rec.column].mode()[0] if not df[rec.column].mode().empty else 'Unknown'
                     df[rec.column] = df[rec.column].fillna(mode_val)
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "handle_outliers":
-                if df is not None and rec.column in df.columns:
+                if rec.column in df.columns:
                     q1 = df[rec.column].quantile(0.25)
                     q3 = df[rec.column].quantile(0.75)
                     iqr = q3 - q1
@@ -394,29 +471,27 @@ class DatasetCleaningApplyView(APIView):
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "standardize_dates":
-                if df is not None and rec.column in df.columns:
+                if rec.column in df.columns:
                     df[rec.column] = pd.to_datetime(df[rec.column], errors='coerce').dt.strftime('%Y-%m-%d')
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "standardize_labels":
-                if df is not None and rec.column in df.columns:
+                if rec.column in df.columns:
                     df[rec.column] = df[rec.column].astype(str).str.title().str.strip()
                     df.to_csv(file_path, index=False)
                     
             elif rec.action_type == "drop_duplicates":
-                if df is not None:
-                    df = df.drop_duplicates()
-                    df.to_csv(file_path, index=False)
+                df = df.drop_duplicates()
+                df.to_csv(file_path, index=False)
             
             # ACCURATELY recalculate stats
-            if df is not None:
-                dataset.missing_values = int(df.isnull().sum().sum())
-                dataset.rows_count = len(df)
-                dataset.duplicate_rows = int(df.duplicated().sum())
+            dataset.missing_values = int(df.isnull().sum().sum())
+            dataset.rows_count = len(df)
+            dataset.duplicate_rows = int(df.duplicated().sum())
             
             rec.delete()
-            if not dataset.recommendations.exists() and dataset.missing_values == 0:
-                dataset.status = "Cleaned"
+            if not dataset.recommendations.exists():
+                dataset.status = "Cleaned" if dataset.missing_values == 0 else "Needs Profiling"
             dataset.save()
             
             return Response({"success": True, "dataset_id": dataset.id, "message": f"Applied {rec_id} successfully."})
@@ -425,7 +500,7 @@ class DatasetCleaningApplyView(APIView):
 
 class ReportListView(APIView):
     def get(self, request):
-        reports = Report.objects.all().values('id', 'title', 'dataset', 'generated', 'visuals_count', 'dax_count')
+        reports = Report.objects.filter(user=request.user).values('id', 'title', 'dataset', 'generated', 'visuals_count', 'dax_count')
         return Response(list(reports))
 
     def delete(self, request):
@@ -433,16 +508,16 @@ class ReportListView(APIView):
         delete_all = request.data.get("delete_all", False)
         
         if delete_all:
-            Report.objects.all().delete()
+            Report.objects.filter(user=request.user).delete()
         else:
-            Report.objects.filter(id__in=ids).delete()
+            Report.objects.filter(user=request.user, id__in=ids).delete()
             
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ReportDetailView(APIView):
     def get(self, request, pk):
         try:
-            report = Report.objects.get(pk=pk)
+            report = Report.objects.get(user=request.user, pk=pk)
             return Response({
                 "id": report.id,
                 "title": report.title,
@@ -458,7 +533,7 @@ class ReportDetailView(APIView):
 
     def delete(self, request, pk):
         try:
-            report = Report.objects.get(pk=pk)
+            report = Report.objects.get(user=request.user, pk=pk)
             report.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Report.DoesNotExist:
@@ -471,7 +546,7 @@ class ChatMessageView(APIView):
             return Response({"error": "Message is required"}, status=status.HTTP_400_BAD_REQUEST)
         
         # Build dataset context
-        datasets = Dataset.objects.all()
+        datasets = Dataset.objects.filter(user=request.user)
         dataset_context = "Available datasets in the workspace:\n"
         if datasets.exists():
             for ds in datasets:
@@ -483,13 +558,14 @@ class ChatMessageView(APIView):
             dataset_context += "- No datasets currently connected.\n"
 
         system_prompt = (
-            "You are InsightFlow AI Analytics Assistant. Provide helpful analysis, DAX formulas, or data cleaning advice.\n"
-            "You have direct knowledge of the user's workspace. Here is the context:\n\n"
-            f"{dataset_context}\n"
-            "IMPORTANT INSTRUCTION FOR ACTIONS:\n"
-            "If the user explicitly asks you to clean a specific dataset, you MUST execute the cleaning process by including the following exact phrase at the very end of your response:\n"
+            "You are InsightFlow AI Analytics Assistant. Provide helpful analysis or DAX formulas.\n"
+            f"Here is the context of the user's workspace:\n{dataset_context}\n\n"
+            "CRITICAL INSTRUCTION:\n"
+            "If the user asks you to clean, fix, or purge missing values from a dataset, you MUST physically trigger the cleaning process. "
+            "To do this, you MUST append exactly this string at the very end of your response:\n"
             "[ACTION: CLEAN_DATASET: dataset_name]\n"
-            "Replace dataset_name with the exact name of the dataset from the context."
+            "(Replace dataset_name with the exact name of the dataset, e.g. area_prices_monthly.csv). "
+            "If you do not include this exact string, the cleaning will fail. Do not just list the steps."
         )
 
         client = OpenRouterClient()
@@ -502,10 +578,20 @@ class ChatMessageView(APIView):
             reply = client.generate_chat_response(messages)
             
             import re
-            action_match = re.search(r'\[ACTION: CLEAN_DATASET: (.*?)\]', reply)
+            action_match = re.search(r'\[ACTION:?\s*CLEAN_DATASET:?\s*(.*?)\]', reply, re.IGNORECASE)
+            dataset_name = None
+            
             if action_match:
                 dataset_name = action_match.group(1).strip()
-                dataset = Dataset.objects.filter(name__icontains=dataset_name).first()
+            elif any(w in user_message.lower() for w in ['clean', 'fix', 'export']):
+                # Fallback: check if a known dataset name is in the message or reply
+                for ds in Dataset.objects.filter(user=request.user):
+                    if ds.name.lower() in user_message.lower() or ds.name.lower() in reply.lower():
+                        dataset_name = ds.name
+                        break
+                        
+            if dataset_name:
+                dataset = Dataset.objects.filter(user=request.user, name__icontains=dataset_name).first()
                 if dataset:
                     # Execute cleaning
                     dataset.status = "Cleaned"
@@ -545,7 +631,7 @@ from django.http import HttpResponse
 class DatasetExportView(APIView):
     def get(self, request, pk):
         try:
-            dataset = Dataset.objects.get(pk=pk)
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
             
             import os
             import pandas as pd
@@ -595,7 +681,7 @@ class DatasetExportView(APIView):
 class ReportExportView(APIView):
     def get(self, request, pk):
         try:
-            report = Report.objects.get(pk=pk)
+            report = Report.objects.get(user=request.user, pk=pk)
             
             response = HttpResponse(content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="Report_{report.title}.pdf"'
