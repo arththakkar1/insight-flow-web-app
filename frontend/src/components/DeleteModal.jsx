@@ -1,6 +1,6 @@
 import { apiFetch } from '../utils/api';
 import { useState, useEffect } from 'react';
-import { X, Trash2, CheckCircle2, Database, BarChart2, Loader2 } from 'lucide-react';
+import { X, Trash2, CheckCircle2, Database, BarChart2, Loader2, FileText } from 'lucide-react';
 
 export default function DeleteModal({ isOpen, onClose }) {
   const [datasets, setDatasets] = useState([]);
@@ -85,74 +85,73 @@ export default function DeleteModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-      <div className="bg-card w-full max-w-3xl max-h-[85vh] border border-border rounded-[16px] shadow-[0_20px_60px_rgba(0,0,0,0.1)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-card w-full max-w-3xl max-h-[85vh] border border-border rounded-[20px] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border flex justify-between items-center bg-muted/30">
+        <div className="px-6 py-5 border-b border-border flex justify-between items-center bg-accent/20">
           <div>
-            <h2 className="text-xl font-medium tracking-tight flex items-center gap-2">
-              <Trash2 size={20} className="text-destructive" />
+            <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 text-foreground font-sans">
+              <Trash2 size={18} className="text-[#ff5577]" />
               Data Manager
             </h2>
-            <p className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest mt-1 font-bold">Select assets to purge</p>
+            <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider mt-1 font-bold">Select analytical assets to purge</p>
           </div>
-          <button onClick={onClose} className="p-2 bg-background border border-border rounded-[8px] hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-            <X size={18} />
+          <button onClick={onClose} className="p-2 bg-background border border-border rounded-lg hover:bg-accent transition-all text-muted-foreground hover:text-foreground">
+            <X size={16} />
           </button>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 bg-background flex flex-col gap-6 relative">
-          {/* Subtle background grid pattern */}
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wNSkiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,white,transparent)] pointer-events-none opacity-50 dark:opacity-20 z-0" />
-          
           {loading ? (
-            <div className="py-20 flex justify-center items-center font-mono text-[12px] text-muted-foreground animate-pulse tracking-widest uppercase z-10 relative">
+            <div className="py-20 flex justify-center items-center font-mono text-[11px] text-muted-foreground animate-pulse tracking-widest uppercase">
               Retrieving System Records...
             </div>
           ) : (
-            <div className="z-10 relative space-y-8">
+            <div className="space-y-8">
               {/* Datasets Section */}
               <div>
-                <div className="flex justify-between items-center border-b border-border pb-2 mb-4">
-                  <h3 className="text-sm font-bold font-mono tracking-wider text-muted-foreground uppercase flex items-center gap-2">
-                    <Database size={16} /> Datasets ({datasets.length})
+                <div className="flex justify-between items-center border-b border-border pb-2.5 mb-4">
+                  <h3 className="text-xs font-bold font-sans tracking-tight text-foreground flex items-center gap-2">
+                    <Database size={14} className="text-muted-foreground" /> Datasets ({datasets.length})
                   </h3>
                   {datasets.length > 0 && (
                     <button 
                       onClick={() => setSelectedDatasets(datasets.map(d => d.id))}
-                      className="text-[10px] font-mono font-bold tracking-widest uppercase text-foreground hover:text-destructive transition-colors bg-muted px-2.5 py-1 rounded-[6px]"
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#ff5577] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border"
                     >
                       Select All
                     </button>
                   )}
                 </div>
                 {datasets.length === 0 ? (
-                   <div className="p-6 border border-border border-dashed rounded-[12px] bg-muted/50 flex items-center justify-center">
-                     <p className="text-[12px] text-muted-foreground font-mono uppercase tracking-widest font-bold">No datasets found.</p>
+                   <div className="p-6 border border-border border-dashed rounded-[15px] bg-card flex items-center justify-center">
+                     <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">No datasets found</p>
                    </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {datasets.map(ds => (
                       <div 
                         key={ds.id}
                         onClick={() => toggleDataset(ds.id)}
-                        className={`flex items-center gap-4 p-4 rounded-[12px] border cursor-pointer transition-all ${
+                        className={`flex items-center gap-4 p-4 rounded-[15px] border cursor-pointer transition-all ${
                           selectedDatasets.includes(ds.id) 
-                            ? 'bg-destructive/5 border-destructive/30' 
-                            : 'bg-card border-border hover:border-destructive/20 hover:bg-muted'
+                            ? 'bg-[#ff5577]/5 border-[#ff5577] shadow-[0_0_0_1px_#ff5577]' 
+                            : 'bg-card border-border hover:border-foreground/30 hover:bg-accent/40'
                         }`}
                       >
                         <div className="shrink-0">
                           {selectedDatasets.includes(ds.id) ? (
-                            <CheckCircle2 size={20} className="text-destructive fill-destructive/10 transition-transform scale-110" strokeWidth={2.5} />
+                            <div className="w-5 h-5 rounded-[5px] bg-[#ff5577] text-white flex items-center justify-center scale-105 transition-all">
+                              <CheckCircle2 size={14} className="stroke-[3]" />
+                            </div>
                           ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-border/70 transition-all bg-background" />
+                            <div className="w-5 h-5 rounded-[5px] border border-border transition-all bg-background" />
                           )}
                         </div>
                         <div className="truncate">
-                          <p className="text-[15px] font-medium tracking-tight truncate group-hover:text-primary transition-colors">{ds.name}</p>
-                          <p className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5">{ds.rows_count?.toLocaleString()} rows</p>
+                          <p className="text-sm font-semibold tracking-tight text-foreground font-sans truncate">{ds.name}</p>
+                          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mt-0.5">{ds.rows_count?.toLocaleString()} rows</p>
                         </div>
                       </div>
                     ))}
@@ -162,45 +161,47 @@ export default function DeleteModal({ isOpen, onClose }) {
 
               {/* Reports Section */}
               <div>
-                <div className="flex justify-between items-center border-b border-border pb-2 mb-4">
-                  <h3 className="text-sm font-bold font-mono tracking-wider text-muted-foreground uppercase flex items-center gap-2">
-                    <BarChart2 size={16} /> Reports ({reports.length})
+                <div className="flex justify-between items-center border-b border-border pb-2.5 mb-4">
+                  <h3 className="text-xs font-bold font-sans tracking-tight text-foreground flex items-center gap-2">
+                    <BarChart2 size={14} className="text-muted-foreground" /> Reports ({reports.length})
                   </h3>
                   {reports.length > 0 && (
                     <button 
                       onClick={() => setSelectedReports(reports.map(r => r.id))}
-                      className="text-[10px] font-mono font-bold tracking-widest uppercase text-foreground hover:text-destructive transition-colors bg-muted px-2.5 py-1 rounded-[6px]"
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#ff5577] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border"
                     >
                       Select All
                     </button>
                   )}
                 </div>
                 {reports.length === 0 ? (
-                   <div className="p-6 border border-border border-dashed rounded-[12px] bg-muted/50 flex items-center justify-center">
-                     <p className="text-[12px] text-muted-foreground font-mono uppercase tracking-widest font-bold">No reports found.</p>
+                   <div className="p-6 border border-border border-dashed rounded-[15px] bg-card flex items-center justify-center">
+                     <p className="text-xs text-muted-foreground font-mono uppercase tracking-wider">No reports found</p>
                    </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                     {reports.map(rep => (
                       <div 
                         key={rep.id}
                         onClick={() => toggleReport(rep.id)}
-                        className={`flex items-center gap-4 p-4 rounded-[12px] border cursor-pointer transition-all ${
+                        className={`flex items-center gap-4 p-4 rounded-[15px] border cursor-pointer transition-all ${
                           selectedReports.includes(rep.id) 
-                            ? 'bg-destructive/5 border-destructive/30' 
-                            : 'bg-card border-border hover:border-destructive/20 hover:bg-muted'
+                            ? 'bg-[#ff5577]/5 border-[#ff5577] shadow-[0_0_0_1px_#ff5577]' 
+                            : 'bg-card border-border hover:border-foreground/30 hover:bg-accent/40'
                         }`}
                       >
                         <div className="shrink-0">
                           {selectedReports.includes(rep.id) ? (
-                            <CheckCircle2 size={20} className="text-destructive fill-destructive/10 transition-transform scale-110" strokeWidth={2.5} />
+                            <div className="w-5 h-5 rounded-[5px] bg-[#ff5577] text-white flex items-center justify-center scale-105 transition-all">
+                              <CheckCircle2 size={14} className="stroke-[3]" />
+                            </div>
                           ) : (
-                            <div className="w-5 h-5 rounded-full border-2 border-border/70 transition-all bg-background" />
+                            <div className="w-5 h-5 rounded-[5px] border border-border transition-all bg-background" />
                           )}
                         </div>
                         <div className="truncate">
-                          <p className="text-[15px] font-medium tracking-tight truncate group-hover:text-primary transition-colors">{rep.title}</p>
-                          <p className="text-[11px] font-mono text-muted-foreground uppercase tracking-widest mt-0.5 truncate">Source: {rep.dataset}</p>
+                          <p className="text-sm font-semibold tracking-tight text-foreground font-sans truncate">{rep.title}</p>
+                          <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mt-0.5 truncate">Source: {rep.dataset}</p>
                         </div>
                       </div>
                     ))}
@@ -212,29 +213,28 @@ export default function DeleteModal({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border bg-muted/30 flex justify-between items-center relative z-10">
-          <div className="text-[12px] font-mono text-muted-foreground uppercase tracking-widest font-bold flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-destructive animate-pulse" style={{ opacity: totalSelected > 0 ? 1 : 0.3 }} />
-            {totalSelected} Items Marked
+        <div className="px-6 py-4 border-t border-border bg-card flex justify-between items-center relative z-10">
+          <div className="text-[10px] font-sans text-muted-foreground uppercase tracking-wider font-bold flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff5577] animate-pulse" style={{ opacity: totalSelected > 0 ? 1 : 0.3 }} />
+            {totalSelected} Items Selected
           </div>
           <div className="flex gap-3">
-
             <button 
               onClick={onClose}
               disabled={deleting}
-              className="px-5 py-2.5 rounded-[8px] text-[13px] font-mono uppercase tracking-wider font-bold bg-background border border-border text-foreground hover:bg-muted transition-colors shadow-sm disabled:opacity-50"
+              className="px-5 py-2 rounded-full text-xs font-semibold bg-background hover:bg-accent border border-border text-foreground transition-all shadow-sm disabled:opacity-50 active:scale-95"
             >
               Cancel
             </button>
             <button 
               onClick={handleDelete}
               disabled={totalSelected === 0 || deleting}
-              className="px-5 py-2.5 rounded-[8px] text-[13px] font-mono uppercase tracking-wider font-bold bg-destructive text-destructive-foreground hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2 rounded-full text-xs font-semibold bg-[#ff5577] hover:opacity-90 text-white transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               {deleting ? (
-                <><Loader2 size={16} className="animate-spin" /> Purging...</>
+                <><Loader2 size={12} className="animate-spin" /> Purging...</>
               ) : (
-                <><Trash2 size={16} /> Execute Purge</>
+                <><Trash2 size={12} /> Execute Purge</>
               )}
             </button>
           </div>

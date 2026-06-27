@@ -500,7 +500,7 @@ class DatasetCleaningApplyView(APIView):
 
 class ReportListView(APIView):
     def get(self, request):
-        reports = Report.objects.filter(user=request.user).values('id', 'title', 'dataset', 'generated', 'visuals_count', 'dax_count')
+        reports = Report.objects.filter(user=request.user).values('id', 'title', 'dataset', 'generated', 'visuals_count', 'dax_count', 'report_type')
         return Response(list(reports))
 
     def delete(self, request):
@@ -523,6 +523,7 @@ class ReportDetailView(APIView):
                 "title": report.title,
                 "dataset": report.dataset,
                 "generated": report.generated,
+                "report_type": report.report_type,
                 "visuals_count": report.visuals_count,
                 "dax_count": report.dax_count,
                 "visuals_data": report.visuals_data,
@@ -770,3 +771,248 @@ class DaxGeneratorView(APIView):
             "formula": "Sales YTD = TOTALYTD(SUM('Sales_Data_2023'[Sales]), 'Sales_Data_2023'[Date])",
             "explanation": "Calculates the cumulative sum of sales from the start of the current calendar year up to the current date."
         })
+
+class DatasetGenerateMLReportView(APIView):
+    def post(self, request, pk):
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+            features = request.data.get('features', [])
+            target = request.data.get('target')
+            model_type = request.data.get('model_type', 'random_forest')
+            task_type = request.data.get('task_type')
+            
+            if not target:
+                return Response({"error": "Target column is required"}, status=status.HTTP_400_BAD_REQUEST)
+            if not features:
+                return Response({"error": "At least one feature column is required"}, status=status.HTTP_400_BAD_REQUEST)
+                
+            import os
+            import numpy as np
+            from django.conf import settings
+            
+            file_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}.csv")
+            if not os.path.exists(file_path):
+                return Response({"error": "Dataset CSV file not found on server"}, status=status.HTTP_404_NOT_FOUND)
+                
+            df = pd.read_csv(file_path)
+            
+            # Verify target and features exist in dataset
+            all_cols = list(df.columns)
+            if target not in all_cols:
+                return Response({"error": f"Target column '{target}' not found in dataset"}, status=status.HTTP_400_BAD_REQUEST)
+            for f in features:
+                if f not in all_cols:
+                    return Response({"error": f"Feature column '{f}' not found in dataset"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Select columns
+            cols_to_use = features + [target]
+            df_model = df[cols_to_use].copy()
+            
+            # Drop rows where target is missing
+            df_model = df_model.dropna(subset=[target])
+            
+            # Basic preprocessing: Impute missing feature values
+            for col in features:
+                if df_model[col].dtype in ['int64', 'float64']:
+                    median_val = df_model[col].median()
+                    df_model[col] = df_model[col].fillna(median_val if not pd.isna(median_val) else 0)
+                else:
+                    df_model[col] = df_model[col].fillna('Missing')
+            
+            # Infer Task Type if not provided
+            if not task_type:
+                target_dtype = df_model[target].dtype
+                unique_count = df_model[target].nunique()
+                # If target is object/string, or has fewer than 15 unique values, treat as classification
+                if target_dtype == 'object' or unique_count <= 15:
+                    task_type = 'classification'
+                else:
+                    task_type = 'regression'
+                    
+            # Encode categorical features using dummy encoding
+            X_df = df_model[features].copy()
+            cat_features = [col for col in features if X_df[col].dtype == 'object' or X_df[col].dtype.name == 'category']
+            
+            X_encoded = pd.get_dummies(X_df, columns=cat_features, drop_first=True)
+            feature_names = list(X_encoded.columns)
+            
+            # Prepare targets
+            y = df_model[target].values
+            target_classes = []
+            if task_type == 'classification':
+                if df_model[target].dtype == 'object' or df_model[target].dtype.name == 'category':
+                    unique_targets = sorted(list(df_model[target].unique()))
+                    target_map = {val: idx for idx, val in enumerate(unique_targets)}
+                    y = df_model[target].map(target_map).values
+                    target_classes = [str(x) for x in unique_targets]
+                else:
+                    unique_targets = sorted(list(np.unique(y)))
+                    target_classes = [str(x) for x in unique_targets]
+            
+            X = X_encoded.values
+            
+            if len(df_model) < 5:
+                return Response({"error": "Dataset has too few records for training (minimum 5 required)"}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Train test split
+            from sklearn.model_selection import train_test_split
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            
+            # Train model
+            metrics = {}
+            importances_vals = []
+            predictions_data = []
+            
+            from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
+            from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+            from sklearn.linear_model import LogisticRegression, LinearRegression
+            from sklearn.metrics import accuracy_score, precision_recall_fscore_support, r2_score, mean_squared_error, mean_absolute_error
+            
+            model = None
+            if task_type == 'classification':
+                if model_type == 'decision_tree':
+                    model = DecisionTreeClassifier(max_depth=5, random_state=42)
+                elif model_type == 'logistic_regression':
+                    model = LogisticRegression(max_iter=1000, random_state=42)
+                else:
+                    model = RandomForestClassifier(n_estimators=100, max_depth=6, random_state=42)
+                    
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                
+                # Metrics
+                acc = accuracy_score(y_test, y_pred)
+                p, r, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted', zero_division=0)
+                metrics = {
+                    "accuracy": round(float(acc), 4),
+                    "precision": round(float(p), 4),
+                    "recall": round(float(r), 4),
+                    "f1_score": round(float(f1), 4)
+                }
+                
+                # Importances
+                if hasattr(model, 'feature_importances_'):
+                    importances_vals = model.feature_importances_
+                elif hasattr(model, 'coef_'):
+                    importances_vals = np.abs(model.coef_[0])
+                    sum_coef = np.sum(importances_vals)
+                    if sum_coef > 0:
+                        importances_vals = importances_vals / sum_coef
+                else:
+                    importances_vals = np.ones(len(feature_names)) / len(feature_names)
+                    
+                # Predictions sample (limit to 50)
+                for i in range(min(len(y_test), 50)):
+                    act_lbl = target_classes[int(y_test[i])] if target_classes else str(y_test[i])
+                    pred_lbl = target_classes[int(y_pred[i])] if target_classes else str(y_pred[i])
+                    predictions_data.append({
+                        "id": i,
+                        "actual": act_lbl,
+                        "predicted": pred_lbl,
+                        "correct": bool(y_test[i] == y_pred[i])
+                    })
+            else:
+                if model_type == 'decision_tree':
+                    model = DecisionTreeRegressor(max_depth=5, random_state=42)
+                elif model_type == 'linear_regression':
+                    model = LinearRegression()
+                else:
+                    model = RandomForestRegressor(n_estimators=100, max_depth=6, random_state=42)
+                    
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                
+                # Metrics
+                r2 = r2_score(y_test, y_pred)
+                mse = mean_squared_error(y_test, y_pred)
+                rmse = np.sqrt(mse)
+                mae = mean_absolute_error(y_test, y_pred)
+                metrics = {
+                    "r2_score": round(float(r2), 4),
+                    "mse": round(float(mse), 4),
+                    "rmse": round(float(rmse), 4),
+                    "mae": round(float(mae), 4)
+                }
+                
+                # Importances
+                if hasattr(model, 'feature_importances_'):
+                    importances_vals = model.feature_importances_
+                elif hasattr(model, 'coef_'):
+                    importances_vals = np.abs(model.coef_)
+                    sum_coef = np.sum(importances_vals)
+                    if sum_coef > 0:
+                        importances_vals = importances_vals / sum_coef
+                else:
+                    importances_vals = np.ones(len(feature_names)) / len(feature_names)
+                    
+                # Predictions sample (limit to 50)
+                for i in range(min(len(y_test), 50)):
+                    predictions_data.append({
+                        "id": i,
+                        "actual": round(float(y_test[i]), 4),
+                        "predicted": round(float(y_pred[i]), 4)
+                    })
+                    
+            # Map features to importances
+            importances_list = []
+            for name, imp in zip(feature_names, importances_vals):
+                importances_list.append({
+                    "feature": name,
+                    "importance": round(float(imp), 4)
+                })
+            importances_list = sorted(importances_list, key=lambda x: x['importance'], reverse=True)[:10]
+            
+            ml_summary = {
+                "report_type": "ml",
+                "task_type": task_type,
+                "model_type": model_type,
+                "target_column": target,
+                "feature_columns": features,
+                "metrics": metrics,
+                "feature_importances": importances_list,
+                "predictions_sample": predictions_data,
+                "total_rows_trained": len(df_model)
+            }
+            
+            visuals_data = [
+                {
+                    "type": "MLModelPerformance",
+                    "title": f"Model Diagnostics ({model_type.replace('_', ' ').title()})",
+                    "description": f"Predicting '{target}' using {len(features)} features.",
+                    "details": ml_summary
+                }
+            ]
+            
+            dax_data = [
+                {
+                    "name": "Model Details",
+                    "formula": f"Alg: {model_type.upper()} | Trained on {len(df_model)} rows."
+                },
+                {
+                    "name": "Target Profile",
+                    "formula": f"Target: {target} | Unique Count: {df_model[target].nunique()}"
+                }
+            ]
+            
+            report_id = f"rep_{timezone.now().timestamp()}"
+            report = Report.objects.create(
+                user=request.user,
+                id=report_id,
+                title=f"ML Model Report: {target}",
+                dataset=dataset.name,
+                generated="Just now",
+                report_type="ml",
+                visuals_count=len(visuals_data),
+                dax_count=len(dax_data),
+                visuals_data=visuals_data,
+                dax_data=dax_data
+            )
+            
+            return Response({"report_id": report.id}, status=status.HTTP_201_CREATED)
+            
+        except Dataset.DoesNotExist:
+            return Response({"error": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": f"Failed to train ML model: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

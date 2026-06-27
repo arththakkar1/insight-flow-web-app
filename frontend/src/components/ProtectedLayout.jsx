@@ -20,7 +20,6 @@ export default function ProtectedLayout() {
       method: 'POST',
       credentials: 'include',
     }).catch(() => {});
-    // Clear the frontend flag cookie
     document.cookie = 'is_authenticated=; path=/; max-age=0';
     navigate('/login');
   };
@@ -37,19 +36,21 @@ export default function ProtectedLayout() {
   ];
 
   return (
-    <div className="flex h-dvh bg-muted text-foreground font-sans overflow-hidden selection:bg-primary selection:text-primary-foreground p-4 gap-4">
-      {/* Sidebar - High Contrast Modular Panel */}
-      <aside className="w-64 bg-background border border-border rounded-[16px] flex flex-col shrink-0 shadow-sm overflow-hidden">
-        <div className="h-20 flex items-center px-6 border-b border-border">
-          <div className="bg-primary p-2 rounded-lg text-primary-foreground mr-3">
-            <BarChart2 size={20} strokeWidth={2.5} />
+    <div className="flex h-dvh bg-background text-foreground font-sans overflow-hidden selection:bg-[#0099ff]/30 selection:text-foreground p-4 gap-4">
+      {/* Sidebar - Clean Modular Panel */}
+      <aside className="w-64 bg-card border border-border rounded-xl flex flex-col shrink-0 shadow-sm overflow-hidden">
+        <div className="h-14 flex items-center px-5 border-b border-border">
+          <div className="bg-foreground text-background p-1 rounded-full mr-2.5">
+            <BarChart2 size={14} strokeWidth={2.5} />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">InsightFlow</h1>
+          <span className="font-sans text-[15px] font-bold tracking-tight text-foreground">
+            Insight<span className="text-muted-foreground font-normal">Flow</span>
+          </span>
         </div>
         
-        <nav className="flex-1 py-6 flex flex-col gap-2 px-4 overflow-y-auto">
+        <nav className="flex-1 py-4 flex flex-col gap-1 px-3 overflow-y-auto">
           <div className="px-2 mb-2">
-            <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">Platform</span>
+            <span className="text-[10px] font-sans font-semibold tracking-wider text-muted-foreground/60 uppercase">Platform</span>
           </div>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -58,23 +59,23 @@ export default function ProtectedLayout() {
               <Link
                 key={item.name}
                 to={item.path}
-                className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                   isActive 
-                    ? 'bg-primary text-primary-foreground shadow-md scale-[0.98]' 
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    ? 'bg-foreground text-background shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                 }`}
               >
-                <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                <Icon size={16} strokeWidth={isActive ? 2.5 : 2} />
                 {item.name}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-border bg-card">
+        <div className="p-3 border-t border-border bg-card">
           <div className="flex flex-col gap-1">
-            <div className="px-2 mb-2 mt-2">
-              <span className="text-[10px] font-mono font-bold tracking-wider text-muted-foreground uppercase">System</span>
+            <div className="px-2 mb-2 mt-1">
+              <span className="text-[10px] font-sans font-semibold tracking-wider text-muted-foreground/60 uppercase">System</span>
             </div>
             {bottomNavItems.map((item) => {
               const Icon = item.icon;
@@ -83,13 +84,13 @@ export default function ProtectedLayout() {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all ${
                     isActive 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      ? 'bg-foreground text-background shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                   }`}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                   {item.name}
                 </Link>
               );
@@ -97,19 +98,19 @@ export default function ProtectedLayout() {
             
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 hover:text-destructive transition-all text-left w-full mt-1"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#ff5577] hover:bg-[#ff5577]/10 transition-all text-left w-full mt-0.5"
             >
-              <Trash2 size={18} />
+              <Trash2 size={16} />
               Manage Data
             </button>
             
-            <div className="flex items-center justify-between px-3 py-2 mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between px-3 py-2 mt-3 pt-3 border-t border-border">
               <button 
                 onClick={handleLogout}
-                className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors"
+                className="flex items-center gap-2.5 text-sm font-medium text-muted-foreground hover:text-[#ff5577] transition-colors"
               >
-                <LogOut size={18} />
-                Log Out
+                <LogOut size={16} />
+                Log out
               </button>
               <ThemeToggle />
             </div>
@@ -118,7 +119,7 @@ export default function ProtectedLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-h-0 flex flex-col bg-background border border-border rounded-[16px] shadow-sm overflow-hidden relative">
+      <main className="flex-1 min-h-0 flex flex-col bg-background border border-border rounded-xl shadow-sm overflow-hidden relative">
         {location.pathname.startsWith('/chat') ? (
           <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
         ) : (

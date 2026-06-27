@@ -42,6 +42,7 @@ class Report(models.Model):
     title = models.CharField(max_length=255)
     dataset = models.CharField(max_length=255)
     generated = models.CharField(max_length=100, default="Just now")
+    report_type = models.CharField(max_length=50, default="bi")
     visuals_count = models.IntegerField(default=3)
     dax_count = models.IntegerField(default=3)
     visuals_data = models.JSONField(default=list)

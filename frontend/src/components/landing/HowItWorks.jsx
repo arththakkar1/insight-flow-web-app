@@ -1,38 +1,48 @@
 export default function HowItWorks() {
   return (
-    <section className="bg-background py-32 border-t border-border/50">
+    <section className="bg-background py-[96px] border-t border-border" id="how-it-works">
       <div className="max-w-[1400px] mx-auto px-8">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <h2 className="text-4xl font-bold tracking-tight mb-6">How it works</h2>
-          <p className="text-lg text-muted-foreground">Three simple steps to unlock the full potential of your data warehouse.</p>
+        <div className="max-w-3xl mb-16">
+          <h2 className="text-3xl md:text-[50px] font-medium tracking-framer-lg text-foreground mb-4 leading-tight">
+            How it works
+          </h2>
+          <p className="text-base text-muted-foreground max-w-xl font-sans">
+            Three simple steps to unlock the full potential of your database and analytical workspace.
+          </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-          {/* Connector Line */}
-          <div className="hidden md:block absolute top-12 left-[10%] right-[10%] h-[2px] bg-gradient-to-r from-transparent via-border to-transparent -z-10" />
-
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full bg-card border border-border/50 shadow-sm flex items-center justify-center text-3xl font-bold text-primary mb-8 relative">
-              1
-            </div>
-            <h3 className="text-xl font-semibold mb-3">Connect your data</h3>
-            <p className="text-muted-foreground leading-relaxed">Upload CSV/Excel files or connect directly to SQL, Snowflake, or BigQuery.</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          {/* Step 1 */}
+          <div className="flex flex-col items-start text-left border-t border-border pt-6 relative">
+            <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#0099ff] mb-4">
+              01
+            </span>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2 font-sans">Connect data matrix</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+              Ingest standard CSV/Excel sheets or interface directly with connected analytical sources.
+            </p>
           </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full bg-card border border-border/50 shadow-sm flex items-center justify-center text-3xl font-bold text-primary mb-8 relative">
-              2
-            </div>
-            <h3 className="text-xl font-semibold mb-3">Ask in plain English</h3>
-            <p className="text-muted-foreground leading-relaxed">Request specific metrics, calculations, or cleaning tasks using natural language.</p>
+  
+          {/* Step 2 */}
+          <div className="flex flex-col items-start text-left border-t border-border pt-6 relative">
+            <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#0099ff] mb-4">
+              02
+            </span>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2 font-sans">Select target metrics</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+              Choose your feature columns and target variables. Run cleaning protocols and optimize structure.
+            </p>
           </div>
-
-          <div className="flex flex-col items-center text-center">
-            <div className="w-24 h-24 rounded-full bg-card border border-border/50 shadow-sm flex items-center justify-center text-3xl font-bold text-primary mb-8 relative">
-              3
-            </div>
-            <h3 className="text-xl font-semibold mb-3">Get actionable insights</h3>
-            <p className="text-muted-foreground leading-relaxed">Receive optimized DAX measures, cleansed datasets, and ready-to-use visual blueprints.</p>
+  
+          {/* Step 3 */}
+          <div className="flex flex-col items-start text-left border-t border-border pt-6 relative">
+            <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#0099ff] mb-4">
+              03
+            </span>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2 font-sans">Get blueprint insights</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed font-sans">
+              Review model diagnostics, prediction charts, DAX formulas, and schema relationships instantly.
+            </p>
           </div>
         </div>
       </div>
