@@ -1,3 +1,5 @@
+[⬅️ Back to Documentation Home](../../README.md)
+
 # User Workflows
 
 InsightFlow is designed to support various user personas through a unified, intelligent workflow. The platform guides users from raw data to a complete dashboard blueprint.

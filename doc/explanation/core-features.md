@@ -1,3 +1,5 @@
+[⬅️ Back to Documentation Home](../../README.md)
+
 # Core Features
 
 InsightFlow provides several intelligent engines to assist with the entire data lifecycle.

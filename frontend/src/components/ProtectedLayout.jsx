@@ -99,7 +99,7 @@ export default function ProtectedLayout() {
             
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#f10303] hover:bg-[#3d0d18] transition-all text-left w-full mt-0.5"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#f10303] hover:bg-[#000000] transition-all text-left w-full mt-0.5"
             >
               <Trash2 size={16} />
               Manage Data

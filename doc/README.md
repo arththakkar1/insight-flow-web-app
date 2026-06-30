@@ -30,24 +30,23 @@ Diátaxis is a systematic framework for structuring technical documentation. It 
 
 ## 2. Directory Structure
 
-```text
-doc/
-├── explanation/                          # Theoretical understanding (the "Why")
-│   ├── problem-statement.md              # The bottlenecks in data analytics that InsightFlow solves
-│   ├── system-overview.md                # High-level overview of the InsightFlow vision
-│   ├── core-features.md                  # Deep dive into the AI analytics engines
-│   ├── user-workflows.md                 # End-to-end data processing workflows
-│   └── frontend-architecture.md          # Frontend routes and separation of concerns
-│
-├── reference/                            # Technical specifications (the "What")
-│   └── technology-stack.md               # Details on frontend, backend, DB, and AI layers
-│
-├── tutorials/                            # Getting-started guides (the "How to begin")
-│   └── getting-started.md                # End-to-end walkthrough of uploading and analyzing data
-│
-└── how-to/                               # Goal-oriented guides (the "How to do X")
-    └── generate-dax-measures.md          # Guide to using the DAX recommendation engine
-```
+- **[Explanation](./explanation/)** (Theoretical understanding - the "Why")
+  - [Problem Statement](./explanation/problem-statement.md) - The bottlenecks in data analytics that InsightFlow solves
+  - [System Overview](./explanation/system-overview.md) - High-level overview of the InsightFlow vision
+  - [Core Features](./explanation/core-features.md) - Deep dive into the AI analytics engines
+  - [User Workflows](./explanation/user-workflows.md) - End-to-end data processing workflows
+  - [Frontend Architecture](./explanation/frontend-architecture.md) - Frontend routes and separation of concerns
+
+- **[Reference](./reference/)** (Technical specifications - the "What")
+  - [Technology Stack](./reference/technology-stack.md) - Details on frontend, backend, DB, and AI layers
+  - [API Endpoints](./reference/api-endpoints.md) - Backend API endpoints
+  - [Backend Architecture](./reference/backend-architecture.md) - Backend system design
+
+- **[Tutorials](./tutorials/)** (Getting-started guides - the "How to begin")
+  - [Getting Started](./tutorials/getting-started.md) - End-to-end walkthrough of uploading and analyzing data
+
+- **[How-to Guides](./how-to/)** (Goal-oriented guides - the "How to do X")
+  - [Generate DAX Measures](./how-to/generate-dax-measures.md) - Guide to using the DAX recommendation engine
 
 ---
 

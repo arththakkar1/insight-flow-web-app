@@ -1,8 +1,11 @@
+[⬅ Back to Documentation Home](../../README.md)
+
 # How to Generate DAX Measures
 
 Writing DAX manually can be time-consuming. InsightFlow's DAX Measure Generator automates this process based on the context of your data model.
 
 ## Prerequisites
+
 - You must have uploaded a dataset with numerical metrics and dimensions.
 - (Optional) A completed data modeling step if using multiple tables.
 

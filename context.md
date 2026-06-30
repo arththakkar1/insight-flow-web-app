@@ -1,5 +1,7 @@
 # InsightFlow – AI-Powered Data Analytics Assistant
 
+*For detailed documentation, please refer to the **[InsightFlow Documentation](./doc/README.md)**.*
+
 **InsightFlow** is a SaaS platform that automates the most time-consuming stages of the data analytics workflow. It helps data analysts, Power BI developers, students, and business users transform raw datasets into actionable insights by providing intelligent recommendations for data cleaning, data modeling, DAX measures, visualizations, and dashboard design.
 
 Traditionally, analysts spend significant time understanding datasets, identifying data quality issues, creating relationships between tables, writing DAX calculations, and deciding which charts best represent the data. InsightFlow streamlines this entire process through AI-powered analysis and automation.

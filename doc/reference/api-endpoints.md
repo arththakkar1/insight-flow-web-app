@@ -1,3 +1,5 @@
+[⬅️ Back to Documentation Home](../../README.md)
+
 # API Endpoints Specification
 
 This reference guide details the endpoints, request parameters, and response structures for the InsightFlow REST API. All requests/responses communicate using the `application/json` content type unless uploading multipart form-data.

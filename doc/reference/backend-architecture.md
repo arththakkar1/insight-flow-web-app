@@ -1,3 +1,5 @@
+[⬅️ Back to Documentation Home](../../README.md)
+
 # Backend Architecture
 
 This document provides a technical specification of the **InsightFlow Backend**. The backend is built using **Django** and **Django REST Framework (DRF)** in Python, designed to handle data ingestion, automated profiling with Pandas, and local LLM integration via LM Studio.

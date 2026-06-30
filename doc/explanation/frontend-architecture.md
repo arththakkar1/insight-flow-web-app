@@ -1,3 +1,5 @@
+[⬅️ Back to Documentation Home](../../README.md)
+
 # Frontend Architecture
 
 The InsightFlow frontend is built as a Single Page Application (SPA) using **Vite**, **React.js**, and **TypeScript**. It is designed with a strict separation of concerns to ensure scalability, maintainability, and a highly responsive user experience.
