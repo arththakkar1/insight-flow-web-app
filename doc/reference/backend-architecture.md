@@ -7,11 +7,18 @@ This document provides a technical specification of the **InsightFlow Backend**.
 ## 1. System Components
 
 ```mermaid
-graph LR
-    A["React Frontend"] <-->|"REST API"| B["Django Backend"]
-    B <-->|"Pandas / NumPy"| C["Data Profiling & Processing"]
+graph TD
+    A["React Frontend (Vite)"] <-->|"REST API + JWT"| Auth["Authentication Layer (SimpleJWT)"]
+    Auth <--> B["Django Core Backend"]
+    
+    subgraph "Internal Analytics Engines"
+        B <-->|"Pandas / NumPy"| C["Data Profiling Engine"]
+        B <-->|"Scikit-learn"| ML["ML Prediction Engine"]
+        B <-->|"Rule-based + LLM"| R["Report Generator"]
+    end
+    
     B <-->|"Local API Port 1234"| D["LM Studio (Qwen 2.5 Coder)"]
-    B <-->|"SQL"| E["(PostgreSQL / SQLite Database)"]
+    B <-->|"SQL / ORM"| E["(PostgreSQL / SQLite Database)"]
 ```
 
 *   **Django Web Server:** Serves the API, handles authentication, routes requests, and manages transactions.

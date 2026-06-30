@@ -4,6 +4,28 @@
 
 InsightFlow provides several intelligent engines to assist with the entire data lifecycle.
 
+## Engine Architecture
+
+```mermaid
+graph TD
+    Data["Raw Datasets"] --> Engine1
+    
+    subgraph "Core AI Engines Pipeline"
+        Engine1["Data Profiling Engine"] --> Engine2["Data Cleaning Engine"]
+        Engine2 --> Engine3["Data Modeling Engine"]
+        Engine3 --> Engine4["DAX Generator Engine"]
+        Engine4 --> Engine5["Visualization Engine"]
+        
+        Assistant(("AI Analytics Assistant")) -.->|"Injects NLP Context"| Engine1
+        Assistant -.->|"Injects NLP Context"| Engine2
+        Assistant -.->|"Injects NLP Context"| Engine3
+        Assistant -.->|"Injects NLP Context"| Engine4
+        Assistant -.->|"Injects NLP Context"| Engine5
+    end
+    
+    Engine5 --> Output["Dashboard Blueprint & Insights"]
+```
+
 ## Data Profiling & Cleaning
 When a user uploads one or more datasets (CSV, Excel, or database exports), InsightFlow performs a comprehensive **Data Profiling** process. It examines column types, missing values, duplicate records, unique values, outliers, date fields, categorical variables, and numerical measures.
 
