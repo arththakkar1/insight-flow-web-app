@@ -50,7 +50,7 @@ export default function Features() {
             <div className="relative z-10">
               <h3 className="text-lg font-semibold tracking-tight text-white mb-2 font-sans">Predictive ML Models</h3>
               <p className="text-sm text-white/80 leading-relaxed font-sans">
-                Build decision trees and classification models directly on your ingested data. Generate diagnostics blueprints instantly.
+                Build decision trees and classification models directly on your ingested data. Generate diagnostics reports instantly.
               </p>
             </div>
           </div>

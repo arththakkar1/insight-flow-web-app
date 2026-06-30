@@ -10,7 +10,7 @@ export default function Testimonials() {
       color: "bg-[#ff7a3d]/15 text-[#ff7a3d]"
     },
     {
-      quote: "I used to spend hours manually profiling CSV dumps. Now, I just upload it and get model blueprints in minutes.",
+      quote: "I used to spend hours manually profiling CSV dumps. Now, I just upload it and get model reports in minutes.",
       author: "Michael Chen",
       role: "Data Analyst, FinServe",
       initials: "MC",

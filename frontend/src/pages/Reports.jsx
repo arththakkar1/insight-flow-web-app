@@ -348,7 +348,7 @@ export default function Reports() {
             Saved Reports
           </h1>
           <p className="text-muted-foreground text-xs font-sans">
-            View your generated analytical blueprints, data profiles, and ML models.
+            View your generated analytical reports, data profiles, and ML models.
           </p>
         </div>
       </div>
@@ -360,7 +360,7 @@ export default function Reports() {
           <div className="p-12 border border-dashed border-border rounded-[20px] text-center bg-card">
             <FileText size={32} className="text-muted-foreground/30 mx-auto mb-3" />
             <p className="text-sm font-sans font-medium text-foreground mb-1">No reports created yet</p>
-            <p className="text-xs text-muted-foreground font-sans">Navigate to datasets and generate a report or model blueprint.</p>
+            <p className="text-xs text-muted-foreground font-sans">Navigate to datasets and generate a report or model report.</p>
           </div>
         ) : (
           reports.map((report) => (

@@ -16,7 +16,7 @@ export default function Pricing() {
       price: "$49",
       period: "/mo",
       description: "For professionals needing predictive modeling.",
-      features: ["Unlimited datasets", "Predictive ML models", "Priority support", "Dashboard blueprints"],
+      features: ["Unlimited datasets", "Predictive ML models", "Priority support", "Dashboard reports"],
       cta: "Start free trial",
       featured: true
     },

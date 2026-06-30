@@ -390,7 +390,7 @@ export default function MLBuilder() {
               ) : (
                 <>
                   <BrainCircuit size={14} />
-                  Train & Generate Blueprint
+                  Train & Generate Report
                 </>
               )}
             </button>
@@ -430,7 +430,7 @@ export default function MLBuilder() {
                 Playground Locked
               </h3>
               <p className="text-xs text-muted-foreground font-sans max-w-xs leading-relaxed">
-                Configure your model on the left and click <strong className="text-foreground">Train & Generate Blueprint</strong> to unlock live predictions.
+                Configure your model on the left and click <strong className="text-foreground">Train & Generate Report</strong> to unlock live predictions.
               </p>
             </div>
           ) : (

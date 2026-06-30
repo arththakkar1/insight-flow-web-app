@@ -39,7 +39,7 @@ export default function HowItWorks() {
             <span className="font-mono text-xs font-bold tracking-[0.2em] text-[#0099ff] mb-4">
               03
             </span>
-            <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2 font-sans">Get blueprint insights</h3>
+            <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2 font-sans">Get report insights</h3>
             <p className="text-sm text-muted-foreground leading-relaxed font-sans">
               Review model diagnostics, prediction charts, DAX formulas, and schema relationships instantly.
             </p>

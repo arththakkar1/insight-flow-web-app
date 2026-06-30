@@ -693,22 +693,30 @@ class ReportExportView(APIView):
             p = canvas.Canvas(response, pagesize=letter)
             width, height = letter
             
+            is_ml = report.report_type == 'ml'
+            
             # Title
-            p.setFont("Helvetica-Bold", 24)
-            p.drawString(50, height - 50, f"InsightFlow Report: {report.title}")
+            p.setFont("Helvetica-Bold", 20)
+            title_text = report.title
+            if len(title_text) > 45:
+                title_text = title_text[:42] + "..."
+            p.drawString(50, height - 50, f"InsightFlow {'ML ' if is_ml else ''}Report: {title_text}")
             
             # Meta
             p.setFont("Helvetica", 12)
             p.drawString(50, height - 80, f"Dataset Source: {report.dataset}")
             p.drawString(50, height - 100, f"Generated On: {report.generated}")
-            p.drawString(50, height - 120, f"Total Visuals: {report.visuals_count} | Total DAX Measures: {report.dax_count}")
+            if is_ml:
+                p.drawString(50, height - 120, f"Models Analyzed: {report.visuals_count} | Components: {report.dax_count}")
+            else:
+                p.drawString(50, height - 120, f"Total Visuals: {report.visuals_count} | Total DAX Measures: {report.dax_count}")
             
             p.line(50, height - 130, width - 50, height - 130)
             
             # Visuals
             y_pos = height - 160
             p.setFont("Helvetica-Bold", 16)
-            p.drawString(50, y_pos, "Dashboard Visualizations")
+            p.drawString(50, y_pos, "Model Diagnostics & Insights" if is_ml else "Dashboard Visualizations")
             y_pos -= 30
             
             for i, vis in enumerate(report.visuals_data):
@@ -720,7 +728,40 @@ class ReportExportView(APIView):
                 y_pos -= 20
                 p.setFont("Helvetica", 11)
                 p.drawString(70, y_pos, f"Description: {vis.get('description', '')}")
-                y_pos -= 30
+                y_pos -= 20
+                
+                details = vis.get('details', {})
+                if details:
+                    metrics = details.get('metrics', {})
+                    if metrics:
+                        y_pos -= 5
+                        p.setFont("Helvetica-Bold", 10)
+                        p.drawString(70, y_pos, "Performance & Metrics:")
+                        y_pos -= 15
+                        p.setFont("Helvetica", 10)
+                        for k, v in metrics.items():
+                            if y_pos < 50:
+                                p.showPage()
+                                p.setFont("Helvetica", 10)
+                                y_pos = height - 50
+                            p.drawString(90, y_pos, f"• {str(k).replace('_', ' ').title()}: {v}")
+                            y_pos -= 15
+                            
+                    importances = details.get('feature_importances', [])
+                    if importances:
+                        y_pos -= 5
+                        p.setFont("Helvetica-Bold", 10)
+                        p.drawString(70, y_pos, "Key Drivers (Feature Importances):")
+                        y_pos -= 15
+                        p.setFont("Helvetica", 10)
+                        for imp in importances[:5]:
+                            if y_pos < 50:
+                                p.showPage()
+                                p.setFont("Helvetica", 10)
+                                y_pos = height - 50
+                            p.drawString(90, y_pos, f"• {imp.get('feature', '')}: {imp.get('importance', 0)}")
+                            y_pos -= 15
+                y_pos -= 15
                 
             # DAX
             y_pos -= 20
@@ -729,7 +770,7 @@ class ReportExportView(APIView):
                 y_pos = height - 50
             
             p.setFont("Helvetica-Bold", 16)
-            p.drawString(50, y_pos, "DAX Measures")
+            p.drawString(50, y_pos, "Model Details & Schema" if is_ml else "DAX Measures")
             y_pos -= 30
             
             import textwrap

@@ -17,7 +17,7 @@ export default function Hero() {
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-border bg-card text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer mb-6"
           >
             <Sparkles size={12} className="text-foreground" />
-            <span>InsightFlow 2.0 with ML Blueprint Builder</span>
+            <span>InsightFlow 2.0 with ML Report Builder</span>
             <ArrowRight size={10} />
           </motion.div>
           
@@ -84,7 +84,7 @@ export default function Hero() {
               <div className="h-6 w-full bg-secondary/40 border border-border/50 rounded" />
               <div className="h-6 w-full bg-secondary/40 border border-border/50 rounded" />
               <div className="mt-auto h-8 w-full bg-primary text-primary-foreground rounded-full flex items-center justify-center text-[11px] font-semibold">
-                Generate Blueprint
+                Generate Report
               </div>
             </div>
             

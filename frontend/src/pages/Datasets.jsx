@@ -21,6 +21,7 @@ import {
 import { CustomSelect } from "../components/ui/Select";
 import { cn } from "../lib/utils";
 import { PromptModal } from "../components/ui/PromptModal";
+import { motion } from "motion/react";
 
 export default function Datasets() {
   const { datasetId } = useParams();
@@ -214,7 +215,7 @@ export default function Datasets() {
       })
       .catch(err => {
         console.error("ML Report generation error", err);
-        setMlError(err.message || "Failed to generate predictive blueprint.");
+        setMlError(err.message || "Failed to generate predictive report.");
         setTrainingModel(false);
       });
   };
@@ -228,7 +229,12 @@ export default function Datasets() {
       );
 
     return (
-      <div className="overflow-y-auto flex-1 min-h-0 space-y-8 animate-in fade-in duration-200">
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+        className="overflow-y-auto flex-1 min-h-0 space-y-8 p-1 md:p-0"
+      >
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground font-sans font-bold uppercase tracking-wider">
           <Link to="/datasets" className="hover:text-foreground transition-colors">
             Datasets
@@ -251,7 +257,7 @@ export default function Datasets() {
               </span>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#f10303] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
@@ -280,14 +286,14 @@ export default function Datasets() {
               ) : (
                 <>
                   <PieChart size={14} />
-                  Generate Blueprint
+                  Generate Report
                 </>
               )}
             </button>
           </div>
         </div>
 
-        <div className="bg-card border border-border rounded-[20px] p-8 shadow-sm relative overflow-hidden">
+        <div className="bg-card border border-border rounded-[20px] p-4 md:p-8 shadow-sm relative overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 relative z-10">
             <div className="p-6 bg-background rounded-[15px] border border-border flex flex-col group hover:border-muted-foreground transition-colors">
               <div className="text-[11px] font-sans font-bold tracking-wider text-muted-foreground uppercase mb-3">
@@ -443,12 +449,17 @@ export default function Datasets() {
           type="destructive"
           confirmText="Execute Drop"
         />
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="overflow-y-auto flex-1 min-h-0 space-y-8 animate-in fade-in duration-200">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="overflow-y-auto flex-1 min-h-0 space-y-8"
+    >
       <div className="flex flex-col md:flex-row md:justify-between md:items-end border-b border-border pb-6 gap-4">
         <div>
           <h1 className="text-3xl font-medium tracking-tight text-foreground mb-1 font-sans">
@@ -561,6 +572,6 @@ export default function Datasets() {
         type="destructive"
         confirmText="Execute Drop"
       />
-    </div>
+    </motion.div>
   );
 }

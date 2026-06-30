@@ -127,6 +127,9 @@
     font-feature-settings: "cv01" on, "cv05" on, "cv09" on, "cv11" on, "ss03" on, "ss07" on, "dlig" on;
     letter-spacing: -0.15px;
   }
+  button, [role="button"], a {
+    cursor: pointer;
+  }
 }
 
 /* Framer-specific styling utilities */

@@ -117,10 +117,10 @@ export default function DeleteModal({ isOpen, onClose }) {
                   </h3>
                   {datasets.length > 0 && (
                     <button 
-                      onClick={() => setSelectedDatasets(datasets.map(d => d.id))}
-                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#f10303] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border"
+                      onClick={() => selectedDatasets.length === datasets.length ? setSelectedDatasets([]) : setSelectedDatasets(datasets.map(d => d.id))}
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#f10303] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border cursor-pointer"
                     >
-                      Select All
+                      {selectedDatasets.length === datasets.length ? 'Deselect All' : 'Select All'}
                     </button>
                   )}
                 </div>
@@ -136,7 +136,7 @@ export default function DeleteModal({ isOpen, onClose }) {
                         onClick={() => toggleDataset(ds.id)}
                         className={`flex items-center gap-4 p-4 rounded-[15px] border cursor-pointer transition-all ${
                           selectedDatasets.includes(ds.id) 
-                            ? 'bg-[#3d0000] border-[#f10303] shadow-[0_0_0_1px_#f10303]' 
+                            ? 'bg-[#f10303]/10 border-[#f10303] shadow-[0_0_0_1px_#f10303]' 
                             : 'bg-card border-border hover:border-foreground/30 hover:bg-accent/40'
                         }`}
                       >
@@ -167,10 +167,10 @@ export default function DeleteModal({ isOpen, onClose }) {
                   </h3>
                   {reports.length > 0 && (
                     <button 
-                      onClick={() => setSelectedReports(reports.map(r => r.id))}
-                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#f10303] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border"
+                      onClick={() => selectedReports.length === reports.length ? setSelectedReports([]) : setSelectedReports(reports.map(r => r.id))}
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#f10303] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border cursor-pointer"
                     >
-                      Select All
+                      {selectedReports.length === reports.length ? 'Deselect All' : 'Select All'}
                     </button>
                   )}
                 </div>
@@ -186,7 +186,7 @@ export default function DeleteModal({ isOpen, onClose }) {
                         onClick={() => toggleReport(rep.id)}
                         className={`flex items-center gap-4 p-4 rounded-[15px] border cursor-pointer transition-all ${
                           selectedReports.includes(rep.id) 
-                            ? 'bg-[#3d0000] border-[#f10303] shadow-[0_0_0_1px_#f10303]' 
+                            ? 'bg-[#f10303]/10 border-[#f10303] shadow-[0_0_0_1px_#f10303]' 
                             : 'bg-card border-border hover:border-foreground/30 hover:bg-accent/40'
                         }`}
                       >
