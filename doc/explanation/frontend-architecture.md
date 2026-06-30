@@ -1,4 +1,4 @@
-[⬅️ Back to Documentation Home](../../README.md)
+[Back to Documentation Home](../../README.md)
 
 # Frontend Architecture
 
@@ -42,7 +42,15 @@ InsightFlow uses a client-side router (like `react-router-dom`) structured exact
   - **`/datasets/:datasetId`**: Detailed view of a specific dataset, showing data profiling, cleaning recommendations, and data modeling status.
 
 - **`/reports` (Insights & Visualizations)**
+  - **`/reports`**: A list of all generated reports.
   - **`/reports/:reportId`**: A detailed, specific report containing the visualization blueprint, generated DAX measures, and related analytical metrics for a dataset or query.
+
+- **`/ml-builder` (Machine Learning Builder)**
+  - **`/ml-builder/:datasetId`**: Interface to build a custom machine learning model for a specific dataset.
+
+- **`/ml-models` (Machine Learning Models)**
+  - **`/ml-models`**: A list of all created machine learning models.
+  - **`/ml-models/:modelId`**: Detailed view and prediction interface for a specific ML model.
 
 ### 3. User & Settings Routes
 - **`/settings`**: Application and user preferences (e.g., connected database configurations, theme toggles).

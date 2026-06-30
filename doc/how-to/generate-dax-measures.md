@@ -1,4 +1,4 @@
-[⬅ Back to Documentation Home](../../README.md)
+[Back to Documentation Home](../../README.md)
 
 # How to Generate DAX Measures
 

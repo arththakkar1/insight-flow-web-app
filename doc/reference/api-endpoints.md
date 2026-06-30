@@ -1,4 +1,4 @@
-[⬅️ Back to Documentation Home](../../README.md)
+[Back to Documentation Home](../../README.md)
 
 # API Endpoints Specification
 
@@ -43,6 +43,29 @@ This reference guide details the endpoints, request parameters, and response str
     ```json
     {
       "token": "jwt_token_string",
+      "user": {
+        "id": 1,
+        "username": "johndoe",
+        "email": "john@example.com"
+      }
+    }
+    ```
+
+### Logout User
+*   **Endpoint:** `POST /api/auth/logout/`
+*   **Response (200 OK):**
+    ```json
+    {
+      "message": "Successfully logged out."
+    }
+    ```
+
+### Check Authentication
+*   **Endpoint:** `GET /api/auth/check/`
+*   **Response (200 OK):**
+    ```json
+    {
+      "authenticated": true,
       "user": {
         "id": 1,
         "username": "johndoe",
@@ -157,6 +180,28 @@ This reference guide details the endpoints, request parameters, and response str
     }
     ```
 
+### Export Dataset
+*   **Endpoint:** `GET /api/datasets/<dataset_id>/export/`
+*   **Response (200 OK):** Returns the cleaned dataset file (e.g., CSV or XLSX) for download.
+
+### Generate Report
+*   **Endpoint:** `POST /api/datasets/<dataset_id>/generate-report/`
+*   **Response (201 Created):** Creates a new analytics report based on the dataset.
+
+### Generate ML Report
+*   **Endpoint:** `POST /api/datasets/<dataset_id>/generate-ml-report/`
+*   **Response (201 Created):** Creates a machine learning analysis report based on the dataset.
+
+### ML Model Predict
+*   **Endpoint:** `POST /api/datasets/<dataset_id>/predict/`
+*   **Payload:**
+    ```json
+    {
+      "features": { "Age": 34, "Income": 50000 }
+    }
+    ```
+*   **Response (200 OK):** Returns the prediction output from the dataset's ML model.
+
 ---
 
 ## 3. Analytics & Modeling Endpoints
@@ -228,3 +273,29 @@ This reference guide details the endpoints, request parameters, and response str
       "timestamp": "2026-06-18T23:05:00Z"
     }
     ```
+
+---
+
+## 5. Reports Endpoints
+
+### Get Report List
+*   **Endpoint:** `GET /api/reports/`
+*   **Response (200 OK):**
+    ```json
+    [
+      {
+        "id": "rep_123",
+        "dataset_id": "ds_98765",
+        "title": "Sales Data Analysis",
+        "created_at": "2026-06-19T10:00:00Z"
+      }
+    ]
+    ```
+
+### Get Report Details
+*   **Endpoint:** `GET /api/reports/<report_id>/`
+*   **Response (200 OK):** Returns full details of a specific report.
+
+### Export Report
+*   **Endpoint:** `GET /api/reports/<report_id>/export/`
+*   **Response (200 OK):** Returns the report file (e.g., PDF or Markdown) for download.

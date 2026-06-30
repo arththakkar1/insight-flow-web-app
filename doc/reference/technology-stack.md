@@ -1,4 +1,4 @@
-[⬅️ Back to Documentation Home](../../README.md)
+[Back to Documentation Home](../../README.md)
 
 # Technology Stack
 
@@ -9,14 +9,17 @@ The user interface is built for performance and a premium user experience.
 - **Vite**: Next-generation frontend tooling for fast build times.
 - **React.js**: Core UI library.
 - **TypeScript**: For type-safe frontend development.
-- **Tailwind CSS**: Utility-first CSS framework for styling.
+- **Tailwind CSS v4**: Utility-first CSS framework for styling.
 - **shadcn/ui**: Accessible and customizable component system.
+- **Motion**: For highly interactive and performant web animations.
+- **Base UI**: Headless UI components for building accessible interfaces.
 - **Recharts**: For rendering data visualizations within the app.
 
 ## Backend
 The backend is optimized for data manipulation and API serving.
 - **Python**: Primary backend language.
 - **Django & Django REST Framework**: Robust framework for building scalable APIs.
+- **Django REST Framework SimpleJWT**: For handling JSON Web Token (JWT) based authentication.
 - **Pandas**: Core library for data manipulation and profiling.
 - **NumPy**: Used for numerical computations.
 
