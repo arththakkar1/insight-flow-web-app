@@ -47,6 +47,7 @@ Diátaxis is a systematic framework for structuring technical documentation. It 
 
 - **[How-to Guides](./how-to/)** (Goal-oriented guides - the "How to do X")
   - [Generate DAX Measures](./how-to/generate-dax-measures.md) - Guide to using the DAX recommendation engine
+  - [Build Machine Learning Models](./how-to/build-machine-learning-models.md) - Guide to training predictive models with the ML Builder
 
 ---
 
