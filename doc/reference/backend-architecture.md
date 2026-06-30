@@ -8,10 +8,10 @@ This document provides a technical specification of the **InsightFlow Backend**.
 
 ```mermaid
 graph LR
-    A[React Frontend] <-->|REST API| B[Django Backend]
-    B <-->|Pandas / NumPy| C[Data Profiling & Processing]
-    B <-->|Local API Port 1234| D[LM Studio (Qwen 2.5 Coder)]
-    B <-->|SQL| E[(PostgreSQL / SQLite Database)]
+    A["React Frontend"] <-->|"REST API"| B["Django Backend"]
+    B <-->|"Pandas / NumPy"| C["Data Profiling & Processing"]
+    B <-->|"Local API Port 1234"| D["LM Studio (Qwen 2.5 Coder)"]
+    B <-->|"SQL"| E["(PostgreSQL / SQLite Database)"]
 ```
 
 *   **Django Web Server:** Serves the API, handles authentication, routes requests, and manages transactions.
