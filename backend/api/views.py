@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .llm_client import OpenRouterClient
-from .models import Dataset, DatasetColumn, CleaningRecommendation, Report
+from .models import Dataset, DatasetColumn, CleaningRecommendation, Report, CustomDashboard
 from django.utils import timezone
 import pandas as pd
 
@@ -250,13 +250,42 @@ class DatasetListView(APIView):
         else:
             datasets = Dataset.objects.filter(user=request.user, id__in=ids)
             
-        for dataset in datasets:
-            file_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}.csv")
+        for ds in datasets:
+            file_path = os.path.join(settings.BASE_DIR, 'media', f"{ds.id}.csv")
             if os.path.exists(file_path):
-                os.remove(file_path)
-            dataset.delete()
+                try:
+                    os.remove(file_path)
+                except Exception:
+                    pass
+            ds.delete()
             
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class DatasetDataView(APIView):
+    def get(self, request, pk):
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+            
+            import os
+            import pandas as pd
+            from django.conf import settings
+            file_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}.csv")
+            
+            if os.path.exists(file_path):
+                # We limit to 500 rows to ensure the browser doesn't freeze when rendering many charts
+                df = pd.read_csv(file_path, nrows=500)
+                # Replace NaNs with None so JSON serializes them as null, keeping numeric types intact
+                df = df.where(pd.notnull(df), None)
+                return Response({
+                    "id": dataset.id,
+                    "name": dataset.name,
+                    "columns": list(df.columns),
+                    "data": df.to_dict(orient='records')
+                })
+            else:
+                return Response({"error": "Dataset CSV file not found on server"}, status=status.HTTP_404_NOT_FOUND)
+        except Dataset.DoesNotExist:
+            return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class DatasetDetailView(APIView):
     def get(self, request, pk):
@@ -384,6 +413,17 @@ class DatasetGenerateReportView(APIView):
                     })
                 if not dax_data:
                     dax_data = [{"name": "Row Count", "formula": f"COUNTROWS('{dataset.name}')"}]
+                    
+            try:
+                if 'client' not in locals():
+                    client = OpenRouterClient()
+                md_report = client.generate_detailed_bi_report(dataset_info, visuals_data, dax_data)
+                if visuals_data:
+                    if 'details' not in visuals_data[0]:
+                        visuals_data[0]['details'] = {}
+                    visuals_data[0]['details']['markdown_report'] = md_report
+            except Exception as e:
+                print(f"Failed to generate detailed BI report: {e}")
                     
             report_id = f"rep_{timezone.now().timestamp()}"
             report = Report.objects.create(user=request.user, 
@@ -683,118 +723,85 @@ class ReportExportView(APIView):
     def get(self, request, pk):
         try:
             report = Report.objects.get(user=request.user, pk=pk)
-            
-            response = HttpResponse(content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="Report_{report.title}.pdf"'
-            
-            from reportlab.pdfgen import canvas
-            from reportlab.lib.pagesizes import letter
-            
-            p = canvas.Canvas(response, pagesize=letter)
-            width, height = letter
-            
             is_ml = report.report_type == 'ml'
             
-            # Title
-            p.setFont("Helvetica-Bold", 20)
-            title_text = report.title
-            if len(title_text) > 45:
-                title_text = title_text[:42] + "..."
-            p.drawString(50, height - 50, f"InsightFlow {'ML ' if is_ml else ''}Report: {title_text}")
-            
-            # Meta
-            p.setFont("Helvetica", 12)
-            p.drawString(50, height - 80, f"Dataset Source: {report.dataset}")
-            p.drawString(50, height - 100, f"Generated On: {report.generated}")
-            if is_ml:
-                p.drawString(50, height - 120, f"Models Analyzed: {report.visuals_count} | Components: {report.dax_count}")
-            else:
-                p.drawString(50, height - 120, f"Total Visuals: {report.visuals_count} | Total DAX Measures: {report.dax_count}")
-            
-            p.line(50, height - 130, width - 50, height - 130)
-            
-            # Visuals
-            y_pos = height - 160
-            p.setFont("Helvetica-Bold", 16)
-            p.drawString(50, y_pos, "Model Diagnostics & Insights" if is_ml else "Dashboard Visualizations")
-            y_pos -= 30
+            html = f"""
+            <html>
+            <head>
+                <style>
+                    body {{ font-family: Helvetica, sans-serif; font-size: 12px; color: #333; }}
+                    h1 {{ font-size: 20px; color: #111; margin-bottom: 10px; }}
+                    h2 {{ font-size: 16px; margin-top: 25px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }}
+                    h3 {{ font-size: 14px; margin-top: 15px; color: #222; }}
+                    h4 {{ font-size: 12px; margin-top: 10px; }}
+                    .meta {{ font-size: 11px; color: #666; margin-bottom: 25px; }}
+                    .page-break {{ pdf-pagebreak-before: always; }}
+                    table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }}
+                    th, td {{ border: 1px solid #ddd; padding: 6px; text-align: left; font-size: 11px; }}
+                    th {{ background-color: #f9f9f9; font-weight: bold; }}
+                    code {{ font-family: Courier, monospace; font-size: 11px; background-color: #f5f5f5; padding: 2px 4px; border-radius: 3px; }}
+                    ul {{ margin-top: 5px; margin-bottom: 10px; }}
+                    li {{ margin-bottom: 4px; }}
+                </style>
+            </head>
+            <body>
+                <h1>InsightFlow {'ML ' if is_ml else ''}Report: {report.title}</h1>
+                <div class="meta">
+                    Dataset Source: {report.dataset}<br/>
+                    Generated On: {report.generated}<br/>
+                    {'Models Analyzed: ' + str(report.visuals_count) + ' | Components: ' + str(report.dax_count) if is_ml else 'Total Visuals: ' + str(report.visuals_count) + ' | Total DAX: ' + str(report.dax_count)}
+                </div>
+                <h2>{'Model Diagnostics & Insights' if is_ml else 'Dashboard Visualizations'}</h2>
+            """
             
             for i, vis in enumerate(report.visuals_data):
-                if y_pos < 100:
-                    p.showPage()
-                    y_pos = height - 50
-                p.setFont("Helvetica-Bold", 12)
-                p.drawString(50, y_pos, f"{i+1}. {vis.get('title', 'Unknown')} ({vis.get('type', 'Chart')})")
-                y_pos -= 20
-                p.setFont("Helvetica", 11)
-                p.drawString(70, y_pos, f"Description: {vis.get('description', '')}")
-                y_pos -= 20
+                html += f"<h3>{i+1}. {vis.get('title', 'Unknown')} ({vis.get('type', 'Chart')})</h3>"
+                html += f"<p><strong>Description:</strong> {vis.get('description', '')}</p>"
                 
                 details = vis.get('details', {})
                 if details:
                     metrics = details.get('metrics', {})
                     if metrics:
-                        y_pos -= 5
-                        p.setFont("Helvetica-Bold", 10)
-                        p.drawString(70, y_pos, "Performance & Metrics:")
-                        y_pos -= 15
-                        p.setFont("Helvetica", 10)
+                        html += "<h4>Performance & Metrics:</h4><ul>"
                         for k, v in metrics.items():
-                            if y_pos < 50:
-                                p.showPage()
-                                p.setFont("Helvetica", 10)
-                                y_pos = height - 50
-                            p.drawString(90, y_pos, f"• {str(k).replace('_', ' ').title()}: {v}")
-                            y_pos -= 15
-                            
+                            html += f"<li><strong>{str(k).replace('_', ' ').title()}</strong>: {v}</li>"
+                        html += "</ul>"
+                        
                     importances = details.get('feature_importances', [])
                     if importances:
-                        y_pos -= 5
-                        p.setFont("Helvetica-Bold", 10)
-                        p.drawString(70, y_pos, "Key Drivers (Feature Importances):")
-                        y_pos -= 15
-                        p.setFont("Helvetica", 10)
+                        html += "<h4>Key Drivers (Feature Importances):</h4><ul>"
                         for imp in importances[:5]:
-                            if y_pos < 50:
-                                p.showPage()
-                                p.setFont("Helvetica", 10)
-                                y_pos = height - 50
-                            p.drawString(90, y_pos, f"• {imp.get('feature', '')}: {imp.get('importance', 0)}")
-                            y_pos -= 15
-                y_pos -= 15
+                            html += f"<li><strong>{imp.get('feature', '')}</strong>: {imp.get('importance', 0)}</li>"
+                        html += "</ul>"
                 
-            # DAX
-            y_pos -= 20
-            if y_pos < 150:
-                p.showPage()
-                y_pos = height - 50
-            
-            p.setFont("Helvetica-Bold", 16)
-            p.drawString(50, y_pos, "Model Details & Schema" if is_ml else "DAX Measures")
-            y_pos -= 30
-            
-            import textwrap
+            html += f"<div class='page-break'></div><h2>{'Model Details & Schema' if is_ml else 'DAX Measures'}</h2>"
             for i, dax in enumerate(report.dax_data):
-                if y_pos < 100:
-                    p.showPage()
-                    y_pos = height - 50
-                p.setFont("Helvetica-Bold", 12)
-                p.drawString(50, y_pos, f"{i+1}. {dax.get('name', 'Measure')}")
-                y_pos -= 20
+                html += f"<h3>{i+1}. {dax.get('name', 'Measure')}</h3>"
+                html += f"<code>{dax.get('formula', '')}</code><br/>"
                 
-                textobject = p.beginText(70, y_pos)
-                textobject.setFont("Courier", 10)
-                formula = dax.get('formula', '')
-                lines = textwrap.wrap(formula, width=85)
-                for line in lines:
-                    textobject.textLine(line)
-                p.drawText(textobject)
-                y_pos -= (len(lines) * 15) + 20
-                
-            p.showPage()
-            p.save()
-            return response
+            if report.visuals_data:
+                md_report = report.visuals_data[0].get('details', {}).get('markdown_report', '')
+                if md_report:
+                    import mistune
+                    html += "<div class='page-break'></div>"
+                    md = mistune.create_markdown(plugins=['table'])
+                    html += md(md_report)
+                    
+            html += "</body></html>"
             
+            from xhtml2pdf import pisa
+            from io import BytesIO
+            
+            result = BytesIO()
+            pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+            
+            if not pdf.err:
+                response = HttpResponse(result.getvalue(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="Report_{report.title}.pdf"'
+                return response
+            else:
+                return Response({"error": "Failed to generate PDF"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                
         except Report.DoesNotExist:
             return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -849,10 +856,13 @@ class DatasetGenerateMLReportView(APIView):
             cols_to_use = features + [target]
             df_model = df[cols_to_use].copy()
             
-            # Drop rows where target is missing
+            # 1. TARGET FILTERING
+            # Automatically drop rows where the user-selected target variable is missing
             df_model = df_model.dropna(subset=[target])
             
-            # Basic preprocessing: Impute missing feature values
+            # 2. SMART IMPUTATION
+            # Missing values are imputed using the median for numeric columns,
+            # and a 'Missing' placeholder category for text/categorical columns.
             for col in features:
                 if df_model[col].dtype in ['int64', 'float64']:
                     median_val = df_model[col].median()
@@ -860,7 +870,10 @@ class DatasetGenerateMLReportView(APIView):
                 else:
                     df_model[col] = df_model[col].fillna('Missing')
             
-            # Infer Task Type if not provided
+            # 3. AUTOMATED TASK INFERENCE
+            # If the user doesn't pick 'classification' or 'regression', the system infers it:
+            # - Classification: Chosen if target is an object/string OR has <= 15 unique values (low cardinality).
+            # - Regression: Chosen otherwise (high cardinality numeric).
             if not task_type:
                 target_dtype = df_model[target].dtype
                 unique_count = df_model[target].nunique()
@@ -870,32 +883,33 @@ class DatasetGenerateMLReportView(APIView):
                 else:
                     task_type = 'regression'
                     
-            # Encode categorical features using dummy encoding
+            # 4. ENCODING FEATURES
+            # Apply Dummy Encoding (One-Hot Encoding with drop_first=True) to transform 
+            # categorical text variables into a ML-ready format.
             X_df = df_model[features].copy()
             cat_features = [col for col in features if X_df[col].dtype == 'object' or X_df[col].dtype.name == 'category']
             
             X_encoded = pd.get_dummies(X_df, columns=cat_features, drop_first=True)
             feature_names = list(X_encoded.columns)
             
-            # Prepare targets
+            # 5. TARGET ENCODING
+            # Prepare targets. For Classification, use LabelEncoder to cleanly map categorical 
+            # or string classes into a discrete [0, 1, 2, ...] format required by sklearn classifiers.
             y = df_model[target].values
             target_classes = []
             if task_type == 'classification':
-                if df_model[target].dtype == 'object' or df_model[target].dtype.name == 'category':
-                    unique_targets = sorted(list(df_model[target].unique()))
-                    target_map = {val: idx for idx, val in enumerate(unique_targets)}
-                    y = df_model[target].map(target_map).values
-                    target_classes = [str(x) for x in unique_targets]
-                else:
-                    unique_targets = sorted(list(np.unique(y)))
-                    target_classes = [str(x) for x in unique_targets]
+                from sklearn.preprocessing import LabelEncoder
+                le = LabelEncoder()
+                y = le.fit_transform(df_model[target].values)
+                target_classes = [str(x) for x in le.classes_]
             
             X = X_encoded.values
             
             if len(df_model) < 5:
                 return Response({"error": "Dataset has too few records for training (minimum 5 required)"}, status=status.HTTP_400_BAD_REQUEST)
                 
-            # Train test split
+            # 6. TRAIN-TEST SPLIT
+            # Split the data into 80% for training the model and 20% for evaluating its performance.
             from sklearn.model_selection import train_test_split
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
             
@@ -921,7 +935,8 @@ class DatasetGenerateMLReportView(APIView):
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
                 
-                # Metrics
+                # 7A. CLASSIFICATION METRICS
+                # Extract Accuracy, Precision, Recall, and F1-Score (weighted) for model evaluation.
                 acc = accuracy_score(y_test, y_pred)
                 p, r, f1, _ = precision_recall_fscore_support(y_test, y_pred, average='weighted', zero_division=0)
                 metrics = {
@@ -931,7 +946,9 @@ class DatasetGenerateMLReportView(APIView):
                     "f1_score": round(float(f1), 4)
                 }
                 
-                # Importances
+                # 8A. FEATURE IMPORTANCES (CLASSIFICATION)
+                # Automatically extract feature importance via `.feature_importances_` (for trees) 
+                # or normalized `.coef_` (for linear models) to explain to the user which features drove predictions.
                 if hasattr(model, 'feature_importances_'):
                     importances_vals = model.feature_importances_
                 elif hasattr(model, 'coef_'):
@@ -963,7 +980,8 @@ class DatasetGenerateMLReportView(APIView):
                 model.fit(X_train, y_train)
                 y_pred = model.predict(X_test)
                 
-                # Metrics
+                # 7B. REGRESSION METRICS
+                # Extract R², Mean Squared Error (MSE), Root MSE (RMSE), and Mean Absolute Error (MAE).
                 r2 = r2_score(y_test, y_pred)
                 mse = mean_squared_error(y_test, y_pred)
                 rmse = np.sqrt(mse)
@@ -975,7 +993,9 @@ class DatasetGenerateMLReportView(APIView):
                     "mae": round(float(mae), 4)
                 }
                 
-                # Importances
+                # 8B. FEATURE IMPORTANCES (REGRESSION)
+                # Automatically extract feature importance via `.feature_importances_` (for trees) 
+                # or normalized `.coef_` (for linear models).
                 if hasattr(model, 'feature_importances_'):
                     importances_vals = model.feature_importances_
                 elif hasattr(model, 'coef_'):
@@ -1014,6 +1034,13 @@ class DatasetGenerateMLReportView(APIView):
                 "predictions_sample": predictions_data,
                 "total_rows_trained": len(df_model)
             }
+            # Generate detailed AI Markdown Report via OpenRouter
+            try:
+                client = OpenRouterClient()
+                detailed_md_report = client.generate_detailed_markdown_report(ml_summary)
+                ml_summary['markdown_report'] = detailed_md_report
+            except Exception as e:
+                ml_summary['markdown_report'] = f"Failed to generate detailed AI report: {str(e)}"
             
             visuals_data = [
                 {
@@ -1035,7 +1062,10 @@ class DatasetGenerateMLReportView(APIView):
                 }
             ]
             
-            # Persist trained model + encoding metadata so predict endpoint can reuse it
+            # 9. MODEL PERSISTENCE
+            # The trained model is serialized using `joblib` into a `.pkl` file.
+            # Its metadata (feature lists, encoding maps, task type) is saved to a `.json` file.
+            # This allows the frontend 'Prediction Playground' to query the live model later via the `/predict/` endpoint.
             import joblib, json
             model_path = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model.pkl")
             meta_path  = os.path.join(settings.BASE_DIR, 'media', f"{dataset.id}_model_meta.json")
@@ -1188,3 +1218,110 @@ class MLModelPredictView(APIView):
                 "confidence": None,
                 "target_column": meta['target_column'],
             })
+
+class ReportShareView(APIView):
+    def post(self, request, pk):
+        try:
+            report = Report.objects.get(user=request.user, pk=pk)
+            import secrets
+            if not report.share_token:
+                report.share_token = secrets.token_urlsafe(16)
+            report.is_public = True
+            report.save()
+            return Response({"share_token": report.share_token})
+        except Report.DoesNotExist:
+            return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class SharedReportView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, token):
+        try:
+            report = Report.objects.get(share_token=token, is_public=True)
+            return Response({
+                "id": report.id,
+                "title": report.title,
+                "dataset": report.dataset,
+                "generated": report.generated,
+                "report_type": report.report_type,
+                "visuals_count": report.visuals_count,
+                "dax_count": report.dax_count,
+                "visuals_data": report.visuals_data,
+                "dax_data": report.dax_data,
+            })
+        except Report.DoesNotExist:
+            return Response({"error": "Shared report not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class CustomDashboardShareView(APIView):
+    def post(self, request):
+        try:
+            data = request.data
+            dataset_id = data.get('datasetId')
+            layout = data.get('layout')
+            theme_style = data.get('themeStyle')
+            theme_font = data.get('themeFont')
+            charts = data.get('charts')
+            
+            import secrets
+            share_token = secrets.token_urlsafe(16)
+            
+            dashboard = CustomDashboard.objects.create(
+                user=request.user,
+                dataset_id=dataset_id,
+                layout=layout,
+                theme_style=theme_style,
+                theme_font=theme_font,
+                charts=charts,
+                is_public=True,
+                share_token=share_token
+            )
+            return Response({"share_token": dashboard.share_token})
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class SharedCustomDashboardView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, token):
+        try:
+            dashboard = CustomDashboard.objects.get(share_token=token, is_public=True)
+            
+            import os
+            import pandas as pd
+            from django.conf import settings
+            file_path = os.path.join(settings.BASE_DIR, 'media', f"{dashboard.dataset_id}.csv")
+            
+            dataset_data = []
+            columns = []
+            if os.path.exists(file_path):
+                df = pd.read_csv(file_path, nrows=500)
+                df = df.where(pd.notnull(df), None)
+                columns = list(df.columns)
+                dataset_data = df.to_dict(orient='records')
+
+            return Response({
+                "dataset_id": dashboard.dataset_id,
+                "layout": dashboard.layout,
+                "theme_style": dashboard.theme_style,
+                "theme_font": dashboard.theme_font,
+                "charts": dashboard.charts,
+                "columns": columns,
+                "data": dataset_data
+            })
+        except CustomDashboard.DoesNotExist:
+            return Response({"error": "Shared dashboard not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class DatasetSchemaLayoutView(APIView):
+    def get(self, request, pk):
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+            return Response(dataset.schema_layout)
+        except Dataset.DoesNotExist:
+            return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def post(self, request, pk):
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+            dataset.schema_layout = request.data
+            dataset.save()
+            return Response({"success": True})
+        except Dataset.DoesNotExist:
+            return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)

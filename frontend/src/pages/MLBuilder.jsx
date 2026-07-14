@@ -64,7 +64,9 @@ export default function MLBuilder() {
       })
       .catch(() => {});
 
-    // Check if a model was previously trained
+    // Check if a model was previously trained and persisted in the backend.
+    // The backend provides a '/predict/' endpoint to retrieve metadata (features, target)
+    // of the serialized model so we can initialize the Prediction Playground.
     apiFetch(`http://localhost:8000/api/datasets/${datasetId}/predict/`)
       .then(r => r.json())
       .then(data => {
@@ -90,6 +92,9 @@ export default function MLBuilder() {
     setExistingMeta(null);
 
     try {
+      // Send a POST request to trigger the machine learning pipeline (generate-ml-report).
+      // This will preprocess data, infer task type (classification/regression),
+      // train the model, extract metrics/feature importances, and persist it to disk.
       const res = await apiFetch(`http://localhost:8000/api/datasets/${datasetId}/generate-ml-report/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,6 +135,8 @@ export default function MLBuilder() {
     setPredResult(null);
 
     try {
+      // Query the live model via the '/predict/' endpoint with user-provided inputs.
+      // The backend loads the `.pkl` model and `.json` metadata to generate a prediction.
       const res = await apiFetch(`http://localhost:8000/api/datasets/${datasetId}/predict/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

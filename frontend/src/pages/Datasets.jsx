@@ -274,6 +274,20 @@ export default function Datasets() {
               Export
             </a>
             <button
+              onClick={() => navigate(`/projects/${datasetId}/editor`)}
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-foreground rounded-full text-xs font-semibold transition-all shadow-sm"
+            >
+              <FileSpreadsheet size={14} />
+              Data Editor
+            </button>
+            <button
+              onClick={() => navigate(`/projects/${datasetId}/model-builder`)}
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-foreground rounded-full text-xs font-semibold transition-all shadow-sm"
+            >
+              <Database size={14} />
+              Model Builder
+            </button>
+            <button
               onClick={handleGenerateReport}
               disabled={generatingReport}
               className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-full text-xs font-semibold transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -347,7 +361,7 @@ export default function Datasets() {
                     className="flex flex-col justify-between p-5 border border-border rounded-[15px] bg-background shadow-sm hover:border-muted-foreground transition-all group"
                   >
                     <div className="mb-4">
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#ff5577] font-bold mb-2">
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-[#f00000] font-bold mb-2">
                         Issue: {rec.issue}
                       </div>
                       <div className="text-sm text-foreground font-medium font-sans">

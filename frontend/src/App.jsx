@@ -14,6 +14,11 @@ import Settings from './pages/Settings';
 import Profile from './pages/Profile';
 import MLBuilder from './pages/MLBuilder';
 import MLModels from './pages/MLModels';
+import DashboardBuilder from './pages/DashboardBuilder';
+import DataEditor from './pages/DataEditor';
+import ModelBuilder from './pages/ModelBuilder';
+import SharedReport from './pages/SharedReport';
+import SharedCustomDashboard from './pages/SharedCustomDashboard';
 import { ThemeProvider } from './components/ThemeProvider';
 
 export default function App() {
@@ -25,6 +30,8 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/shared/:token" element={<SharedReport />} />
+        <Route path="/shared-custom/:token" element={<SharedCustomDashboard />} />
 
         {/* Protected Routes inside Layout */}
         <Route element={<ProtectedLayout />}>
@@ -43,6 +50,11 @@ export default function App() {
           
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/:reportId" element={<Reports />} />
+          
+          <Route path="/dashboard-builder/:datasetId?" element={<DashboardBuilder />} />
+          
+          <Route path="/projects/:projectId/editor" element={<DataEditor />} />
+          <Route path="/projects/:projectId/model-builder" element={<ModelBuilder />} />
           
           <Route path="/settings" element={<Settings />} />
           <Route path="/profile" element={<Profile />} />

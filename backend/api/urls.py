@@ -4,8 +4,11 @@ from .views import (
     ChatMessageView, DatasetListView, DatasetDetailView, DatasetProfileView,
     DatasetCleaningView, DatasetCleaningApplyView, DatasetExportView,
     DatasetGenerateReportView, DatasetGenerateMLReportView, MLModelPredictView,
+    DatasetDataView, DatasetSchemaLayoutView,
     ReportListView, ReportDetailView, ReportExportView,
-    ModelSuggestionsView, DaxGeneratorView, RegisterView
+    ModelSuggestionsView, DaxGeneratorView, RegisterView,
+    ReportShareView, SharedReportView,
+    CustomDashboardShareView, SharedCustomDashboardView
 )
 
 urlpatterns = [
@@ -16,9 +19,11 @@ urlpatterns = [
     path('chat/messages/', ChatMessageView.as_view(), name='chat-messages'),
     path('datasets/', DatasetListView.as_view(), name='dataset-list'),
     path('datasets/<str:pk>/', DatasetDetailView.as_view(), name='dataset-detail'),
+    path('datasets/<str:pk>/data/', DatasetDataView.as_view(), name='dataset-data'),
     path('datasets/<str:pk>/profile/', DatasetProfileView.as_view(), name='dataset-profile'),
     path('datasets/<str:pk>/cleaning/', DatasetCleaningView.as_view(), name='dataset-cleaning'),
     path('datasets/<str:pk>/cleaning/apply/', DatasetCleaningApplyView.as_view(), name='dataset-cleaning-apply'),
+    path('datasets/<str:pk>/schema-layout/', DatasetSchemaLayoutView.as_view(), name='dataset-schema-layout'),
     path('datasets/<str:pk>/export/', DatasetExportView.as_view(), name='dataset-export'),
     path('datasets/<str:pk>/generate-report/', DatasetGenerateReportView.as_view(), name='dataset-generate-report'),
     path('datasets/<str:pk>/generate-ml-report/', DatasetGenerateMLReportView.as_view(), name='dataset-generate-ml-report'),
@@ -28,4 +33,9 @@ urlpatterns = [
     path('reports/', ReportListView.as_view(), name='report-list'),
     path('reports/<str:pk>/', ReportDetailView.as_view(), name='report-detail'),
     path('reports/<str:pk>/export/', ReportExportView.as_view(), name='report-export'),
+    path('reports/<str:pk>/share/', ReportShareView.as_view(), name='report-share'),
+    path('shared/report/<str:token>/', SharedReportView.as_view(), name='shared-report'),
+    
+    path('dashboard/share/', CustomDashboardShareView.as_view(), name='dashboard-share'),
+    path('shared/dashboard/<str:token>/', SharedCustomDashboardView.as_view(), name='shared-dashboard'),
 ]

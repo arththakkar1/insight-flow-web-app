@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'motion/react';
-import { MessageSquare, Database, BarChart2, Settings, User, LogOut, Trash2, BrainCircuit, Menu, X } from 'lucide-react';
+import { MessageSquare, Database, BarChart2, Settings, User, LogOut, Trash2, BrainCircuit, Menu, X, LayoutDashboard } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import DeleteModal from './DeleteModal';
 import { isAuthenticated } from '../utils/api';
@@ -11,6 +11,9 @@ export default function ProtectedLayout() {
   const navigate = useNavigate();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const token = isAuthenticated();
+
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   if (!token) {
     return <Navigate to="/login" replace />;
@@ -30,6 +33,7 @@ export default function ProtectedLayout() {
     { name: 'Datasets', path: '/datasets', icon: Database },
     { name: 'ML Models', path: '/ml-models', icon: BrainCircuit },
     { name: 'Reports', path: '/reports', icon: BarChart2 },
+    { name: 'Dashboard', path: '/dashboard-builder', icon: LayoutDashboard },
   ];
 
   const bottomNavItems = [
@@ -37,13 +41,11 @@ export default function ProtectedLayout() {
     { name: 'Profile', path: '/profile', icon: User },
   ];
 
-  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
-
   return (
-    <div className="flex flex-col md:flex-row h-dvh bg-background text-foreground font-sans overflow-hidden selection:bg-[#0099ff]/30 selection:text-foreground md:p-4 gap-4 relative">
+    <div className={`flex flex-col md:flex-row h-dvh bg-background text-foreground font-sans overflow-hidden selection:bg-[#0099ff]/30 selection:text-foreground ${isFullScreen ? 'p-0' : 'md:p-4 gap-4'} relative transition-all duration-500 ease-in-out`}>
       
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex relative z-30 h-auto w-64 bg-card border border-border rounded-xl flex-col shrink-0 shadow-sm overflow-hidden transition-all">
+      <aside className={`hidden md:flex relative z-30 h-auto ${isFullScreen ? 'w-0 opacity-0 -ml-4 border-none !p-0 m-0 overflow-hidden' : 'w-64 border border-border rounded-xl shadow-sm'} bg-card flex-col shrink-0 transition-all duration-500 ease-in-out`}>
         <div className="hidden md:flex h-14 items-center px-5 border-b border-border shrink-0">
           <div className="bg-foreground text-background p-1 rounded-full mr-2.5">
             <BarChart2 size={14} strokeWidth={2.5} />
@@ -124,13 +126,13 @@ export default function ProtectedLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-h-0 flex flex-col bg-background md:border border-border md:rounded-xl shadow-sm overflow-hidden relative z-10 pb-16 md:pb-0">
-        {location.pathname.startsWith('/chat') ? (
-          <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
+      <main className={`flex-1 min-h-0 flex flex-col bg-background ${isFullScreen ? 'border-none shadow-none' : 'md:border border-border md:rounded-xl shadow-sm'} overflow-hidden relative z-10 pb-16 md:pb-0 transition-all duration-500 ease-in-out`}>
+        {location.pathname.startsWith('/chat') || location.pathname.startsWith('/dashboard-builder') || location.pathname.includes('/editor') || location.pathname.includes('/model-builder') ? (
+          <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true), setIsFullScreen, isFullScreen }} />
         ) : (
           <div className="flex-1 overflow-y-auto min-h-0">
             <div className="p-4 md:p-6 max-w-[1400px] mx-auto">
-              <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true) }} />
+              <Outlet context={{ openDeleteModal: () => setIsDeleteModalOpen(true), setIsFullScreen, isFullScreen }} />
             </div>
           </div>
         )}

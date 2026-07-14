@@ -11,6 +11,7 @@ class Dataset(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     missing_values = models.IntegerField(default=0)
     duplicate_rows = models.IntegerField(default=0)
+    schema_layout = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
         return self.name
@@ -47,6 +48,22 @@ class Report(models.Model):
     dax_count = models.IntegerField(default=3)
     visuals_data = models.JSONField(default=list)
     dax_data = models.JSONField(default=list)
+    is_public = models.BooleanField(default=False)
+    share_token = models.CharField(max_length=64, null=True, blank=True, unique=True)
 
     def __str__(self):
         return self.title
+
+class CustomDashboard(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    dataset_id = models.CharField(max_length=255)
+    layout = models.CharField(max_length=50, default="grid-2x2")
+    theme_style = models.CharField(max_length=50, default="default")
+    theme_font = models.CharField(max_length=50, default="sans")
+    charts = models.JSONField(default=list)
+    is_public = models.BooleanField(default=False)
+    share_token = models.CharField(max_length=64, null=True, blank=True, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Dashboard for {self.dataset_id} by {self.user.username}"

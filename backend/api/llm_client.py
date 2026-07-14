@@ -29,11 +29,10 @@ class OpenRouterClient:
     def get_fallback_models(self, preferred_model):
         return [
             preferred_model,
+            "google/gemini-2.0-flash-lite-preview-02-05:free",
             "meta-llama/llama-3.1-8b-instruct:free",
             "google/gemma-2-9b-it:free",
-            "mistralai/mistral-nemo:free",
-            "microsoft/phi-3-mini-128k-instruct:free",
-            "qwen/qwen-2.5-7b-instruct:free"
+            "mistralai/mistral-nemo:free"
         ]
 
     def generate_chat_response(self, messages, model="cohere/north-mini-code:free"):
@@ -90,6 +89,83 @@ class OpenRouterClient:
                     temperature=0.3,
                     max_tokens=1500,
                     response_format={"type": "json_object"}
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                if idx == len(models_to_try) - 1:
+                    raise e
+                print(f"Model {current_model} failed with error: {e}. Trying next fallback...")
+
+    def generate_detailed_markdown_report(self, ml_summary, model="cohere/north-mini-code:free"):
+        prompt = (
+            "You are an expert Data Scientist and Machine Learning Engineer. "
+            "I will provide you with the metadata, metrics, and feature importances "
+            "of a machine learning model that was just trained.\n\n"
+            "Your task is to write a highly detailed, comprehensive, descriptive "
+            "Machine Learning Report (approximately 3 to 4 pages long when rendered) in Markdown format.\n\n"
+            "Include the following sections:\n"
+            "1. **Executive Summary**: High-level overview of the model, target, and outcome.\n"
+            "2. **Data & Blueprint Profile**: Analysis of the dataset structure, features used, and data preprocessing steps.\n"
+            "3. **Model Selection & Rationale**: Explanation of the chosen algorithm and its suitability for the task.\n"
+            "4. **Performance Diagnostics**: In-depth analysis of the metrics (e.g., R², MSE, Accuracy) and what they mean in a business context.\n"
+            "5. **Feature Importance Insights**: Deep dive into the top driving factors (key drivers) behind the predictions.\n"
+            "6. **Conclusion & Recommendations**: Next steps, potential risks, and recommendations for model deployment.\n\n"
+            "Make it professional, verbose, beautifully formatted with markdown headers, lists, and bold text. "
+            "Do NOT include JSON, just pure Markdown.\n\n"
+            f"Here is the ML Model Summary Data:\n{ml_summary}"
+        )
+        messages = [
+            {"role": "system", "content": "You are a senior data scientist writing a comprehensive research report."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        models_to_try = self.get_fallback_models(model)
+        for idx, current_model in enumerate(models_to_try):
+            try:
+                response = self.client.chat.completions.create(
+                    model=current_model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=2500
+                )
+                return response.choices[0].message.content
+            except Exception as e:
+                if idx == len(models_to_try) - 1:
+                    raise e
+                print(f"Model {current_model} failed with error: {e}. Trying next fallback...")
+
+    def generate_detailed_bi_report(self, dataset_info, visuals_data, dax_data, model="cohere/north-mini-code:free"):
+        prompt = (
+            "You are an expert Data Analyst and Business Intelligence Architect. "
+            "I will provide you with the metadata of a dataset, a list of visual charts generated for a dashboard, "
+            "and a set of DAX measures created to analyze the data.\n\n"
+            "Your task is to write a highly detailed, comprehensive, descriptive "
+            "Business Intelligence (BI) Report (approximately 3 to 4 pages long when rendered) in Markdown format.\n\n"
+            "Include the following sections:\n"
+            "1. **Executive Summary**: High-level overview of the dataset and the primary goals of the dashboard.\n"
+            "2. **Dataset Profile & Architecture**: Analysis of the dataset structure, data types, and potential data quality implications.\n"
+            "3. **Visual Analytics Review**: Detailed walkthrough of each generated visualization (e.g. BarCharts, LineCharts) and what trends or insights they likely reveal.\n"
+            "4. **DAX Measures Deep Dive**: In-depth explanation of the generated DAX measures and how they provide business value.\n"
+            "5. **Strategic Recommendations**: Next steps, potential data enrichments, and recommendations for stakeholders.\n\n"
+            "Make it professional, verbose, beautifully formatted with markdown headers, lists, and bold text. "
+            "Do NOT include JSON, just pure Markdown.\n\n"
+            f"Dataset Info:\n{dataset_info}\n\n"
+            f"Visuals Generated:\n{visuals_data}\n\n"
+            f"DAX Measures Generated:\n{dax_data}"
+        )
+        messages = [
+            {"role": "system", "content": "You are a senior data analyst writing a comprehensive BI research report."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        models_to_try = self.get_fallback_models(model)
+        for idx, current_model in enumerate(models_to_try):
+            try:
+                response = self.client.chat.completions.create(
+                    model=current_model,
+                    messages=messages,
+                    temperature=0.7,
+                    max_tokens=2500
                 )
                 return response.choices[0].message.content
             except Exception as e:
