@@ -91,7 +91,7 @@ export default function DeleteModal({ isOpen, onClose }) {
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
           <div>
             <h2 className="text-lg font-bold tracking-tight flex items-center gap-2 text-foreground font-sans">
-              <Trash2 size={18} className="text-[#f10303]" />
+              <Trash2 size={18} className="text-destructive" />
               Data Manager
             </h2>
             <p className="text-[9px] font-mono text-muted-foreground uppercase tracking-wider mt-1 font-bold">Select analytical assets to purge</p>
@@ -118,7 +118,7 @@ export default function DeleteModal({ isOpen, onClose }) {
                   {datasets.length > 0 && (
                     <button 
                       onClick={() => selectedDatasets.length === datasets.length ? setSelectedDatasets([]) : setSelectedDatasets(datasets.map(d => d.id))}
-                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#f10303] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border cursor-pointer"
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-destructive transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border cursor-pointer"
                     >
                       {selectedDatasets.length === datasets.length ? 'Deselect All' : 'Select All'}
                     </button>
@@ -136,13 +136,13 @@ export default function DeleteModal({ isOpen, onClose }) {
                         onClick={() => toggleDataset(ds.id)}
                         className={`flex items-center gap-4 p-4 rounded-[15px] border cursor-pointer transition-all ${
                           selectedDatasets.includes(ds.id) 
-                            ? 'bg-[#f10303]/10 border-[#f10303] shadow-[0_0_0_1px_#f10303]' 
+                            ? 'bg-destructive/10 border-destructive shadow-[0_0_0_1px_hsl(var(--destructive))]' 
                             : 'bg-card border-border hover:border-foreground/30 hover:bg-accent/40'
                         }`}
                       >
                         <div className="shrink-0">
                           {selectedDatasets.includes(ds.id) ? (
-                            <div className="w-5 h-5 rounded-[5px] bg-[#f10303] text-white flex items-center justify-center scale-105 transition-all">
+                            <div className="w-5 h-5 rounded-[5px] bg-destructive text-destructive-foreground flex items-center justify-center scale-105 transition-all">
                               <CheckCircle2 size={14} className="stroke-[3]" />
                             </div>
                           ) : (
@@ -168,7 +168,7 @@ export default function DeleteModal({ isOpen, onClose }) {
                   {reports.length > 0 && (
                     <button 
                       onClick={() => selectedReports.length === reports.length ? setSelectedReports([]) : setSelectedReports(reports.map(r => r.id))}
-                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-[#f10303] transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border cursor-pointer"
+                      className="text-[9px] font-mono font-bold tracking-wider uppercase text-foreground hover:text-destructive transition-all bg-card hover:bg-accent px-2.5 py-1 rounded-md border border-border cursor-pointer"
                     >
                       {selectedReports.length === reports.length ? 'Deselect All' : 'Select All'}
                     </button>
@@ -186,13 +186,13 @@ export default function DeleteModal({ isOpen, onClose }) {
                         onClick={() => toggleReport(rep.id)}
                         className={`flex items-center gap-4 p-4 rounded-[15px] border cursor-pointer transition-all ${
                           selectedReports.includes(rep.id) 
-                            ? 'bg-[#f10303]/10 border-[#f10303] shadow-[0_0_0_1px_#f10303]' 
+                            ? 'bg-destructive/10 border-destructive shadow-[0_0_0_1px_hsl(var(--destructive))]' 
                             : 'bg-card border-border hover:border-foreground/30 hover:bg-accent/40'
                         }`}
                       >
                         <div className="shrink-0">
                           {selectedReports.includes(rep.id) ? (
-                            <div className="w-5 h-5 rounded-[5px] bg-[#f10303] text-white flex items-center justify-center scale-105 transition-all">
+                            <div className="w-5 h-5 rounded-[5px] bg-destructive text-destructive-foreground flex items-center justify-center scale-105 transition-all">
                               <CheckCircle2 size={14} className="stroke-[3]" />
                             </div>
                           ) : (
@@ -215,7 +215,7 @@ export default function DeleteModal({ isOpen, onClose }) {
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border bg-card flex justify-between items-center relative z-10">
           <div className="text-[10px] font-sans text-muted-foreground uppercase tracking-wider font-bold flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#f10303] animate-pulse" style={{ opacity: totalSelected > 0 ? 1 : 0.3 }} />
+            <span className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" style={{ opacity: totalSelected > 0 ? 1 : 0.3 }} />
             {totalSelected} Items Selected
           </div>
           <div className="flex gap-3">
@@ -229,7 +229,7 @@ export default function DeleteModal({ isOpen, onClose }) {
             <button 
               onClick={handleDelete}
               disabled={totalSelected === 0 || deleting}
-              className="px-5 py-2 rounded-full text-xs font-semibold bg-[#f10303] hover:opacity-90 text-white transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+              className="px-5 py-2 rounded-full text-xs font-semibold bg-destructive hover:opacity-90 text-destructive-foreground transition-all shadow-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
             >
               {deleting ? (
                 <><Loader2 size={12} className="animate-spin" /> Purging...</>

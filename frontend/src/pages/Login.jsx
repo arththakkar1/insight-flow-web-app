@@ -62,7 +62,7 @@ export default function Login() {
           </div>
           
           <form className="space-y-4" onSubmit={handleLogin}>
-            {error && <div className="text-[#ff5577] text-xs font-semibold text-center font-sans">{error}</div>}
+            {error && <div className="text-destructive text-xs font-semibold text-center font-sans">{error}</div>}
             
             <div className="space-y-3">
               <div className="space-y-1">

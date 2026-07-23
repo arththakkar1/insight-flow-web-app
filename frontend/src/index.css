@@ -46,10 +46,10 @@
   --color-brand-accent: #0099ff;
   --color-success: #22c55e;
   --color-warning: #ff7a3d;
-  --color-error: #ff5577;
+  --color-error: #ef4444;
   
   --color-badge-orange: #ff7a3d;
-  --color-badge-pink: #ff5577;
+  --color-badge-red: #ef4444;
   --color-badge-violet: #6a4cf5;
   --color-badge-emerald: #22c55e;
 
@@ -77,7 +77,7 @@
     --muted-foreground: #8a8a8f;
     --accent: #f3f3f5;
     --accent-foreground: #111111;
-    --destructive: #ff5577;
+    --destructive: #ef4444;
     --destructive-foreground: #ffffff;
     --border: #e5e5e7;
     --input: #e5e5e7;
@@ -105,7 +105,7 @@
     --muted-foreground: #71717a;
     --accent: #1c1c1c;
     --accent-foreground: #ffffff;
-    --destructive: #ff5577;
+    --destructive: #ef4444;
     --destructive-foreground: #ffffff;
     --border: #262626;
     --input: #262626;
@@ -155,13 +155,13 @@
     background: radial-gradient(circle at top right, #d44df0, #6a4cf5 75%);
   }
   .bg-gradient-framer-orange {
-    background: radial-gradient(circle at top right, #ff5577, #ff7a3d 75%);
+    background: radial-gradient(circle at top right, #ef4444, #ff7a3d 75%);
   }
   .bg-gradient-framer-magenta {
-    background: radial-gradient(circle at top right, #ff5577, #d44df0 75%);
+    background: radial-gradient(circle at top right, #ef4444, #d44df0 75%);
   }
   .bg-gradient-framer-coral {
-    background: radial-gradient(circle at top right, #ff5577, #6a4cf5 75%);
+    background: radial-gradient(circle at top right, #ef4444, #6a4cf5 75%);
   }
 }
 

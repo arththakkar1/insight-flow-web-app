@@ -17,7 +17,7 @@ const getThemeColors = (theme) => {
     case 'cyberpunk': return ['#0ff', '#f0f', '#39ff14', '#fff01f', '#00ffcc', '#ff0055', '#bb00ff', '#0055ff'];
     case 'ocean': return ['#0ea5e9', '#0284c7', '#0369a1', '#075985', '#38bdf8', '#7dd3fc', '#bae6fd', '#e0f2fe'];
     case 'sunset': return ['#f97316', '#ea580c', '#c2410c', '#9a3412', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5'];
-    default: return ['#f10303', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+    default: return ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
   }
 };
 
@@ -357,7 +357,7 @@ export default function DashboardBuilder() {
         {!isFullScreen && (
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border pb-6 mb-6 shrink-0">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#f10303] to-[#ff4d4d] flex items-center justify-center text-white shadow-lg">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-destructive to-destructive flex items-center justify-center text-destructive-foreground shadow-lg">
                 <LayoutDashboard size={20} />
               </div>
               <div>
@@ -425,21 +425,21 @@ export default function DashboardBuilder() {
                 <div className="grid grid-cols-2 gap-3">
                   <button 
                     onClick={() => setLayout('single')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'single' ? 'bg-[#f10303]/10 border-[#f10303] text-[#f10303]' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'single' ? 'bg-destructive/10 border-destructive text-destructive' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
                   >
                     <Maximize2 size={16} className="mb-2" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Single</span>
                   </button>
                   <button 
                     onClick={() => setLayout('split-horizontal')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'split-horizontal' ? 'bg-[#f10303]/10 border-[#f10303] text-[#f10303]' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'split-horizontal' ? 'bg-destructive/10 border-destructive text-destructive' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
                   >
                     <Rows3 size={16} className="mb-2" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">Split</span>
                   </button>
                   <button 
                     onClick={() => setLayout('grid-2x2')}
-                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'grid-2x2' ? 'bg-[#f10303]/10 border-[#f10303] text-[#f10303]' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'grid-2x2' ? 'bg-destructive/10 border-destructive text-destructive' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
                   >
                     <LayoutGrid size={16} className="mb-2" />
                     <span className="text-[10px] font-bold uppercase tracking-wider">2x2</span>
@@ -463,7 +463,7 @@ export default function DashboardBuilder() {
               {!isFullScreen && (
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-sm font-bold font-mono uppercase tracking-wider flex items-center gap-2">
-                    <Play size={14} className="text-[#f10303]" /> 3. Live Dashboard Render
+                    <Play size={14} className="text-destructive" /> 3. Live Dashboard Render
                   </h2>
                   <div className="flex gap-2">
                     <button 

@@ -113,7 +113,7 @@ export default function MLModels() {
           <div className="flex gap-2.5">
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#ff5577] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-destructive hover:border-destructive/20 rounded-full text-xs font-semibold transition-all shadow-sm"
             >
               <Trash2 size={13} />
               Delete
@@ -133,14 +133,14 @@ export default function MLModels() {
         {/* Model spec badges */}
         {ml && (
           <div className="flex flex-wrap gap-2 mb-8">
-            <span className="px-3 py-1.5 bg-[#002a45] border border-[#0099ff]/40 text-[#0099ff] rounded-full text-[11px] font-bold font-mono uppercase tracking-wider">
+            <span className="px-3 py-1.5 bg-primary/10 border border-primary/40 text-primary rounded-full text-[11px] font-bold font-mono uppercase tracking-wider">
               {ml.model_type?.replace(/_/g, ' ')}
             </span>
             <span className="px-3 py-1.5 bg-card border border-border text-muted-foreground rounded-full text-[11px] font-bold font-mono uppercase tracking-wider">
               {ml.task_type}
             </span>
             <span className="px-3 py-1.5 bg-card border border-border text-foreground rounded-full text-[11px] font-semibold font-sans">
-              Target: <span className="text-[#0099ff]">{ml.target_column}</span>
+              Target: <span className="text-primary">{ml.target_column}</span>
             </span>
             <span className="px-3 py-1.5 bg-card border border-border text-muted-foreground rounded-full text-[11px] font-semibold font-sans">
               Trained on {ml.total_rows_trained?.toLocaleString()} rows
@@ -163,14 +163,14 @@ export default function MLModels() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {isClassification ? (
                   <>
-                    <MetricCard label="Accuracy" value={`${(metrics.accuracy * 100).toFixed(1)}%`} color="text-[#22c55e]" />
+                    <MetricCard label="Accuracy" value={`${(metrics.accuracy * 100).toFixed(1)}%`} color="text-success" />
                     <MetricCard label="Precision" value={`${(metrics.precision * 100).toFixed(1)}%`} />
                     <MetricCard label="Recall" value={`${(metrics.recall * 100).toFixed(1)}%`} />
                     <MetricCard label="F1 Score" value={`${(metrics.f1_score * 100).toFixed(1)}%`} />
                   </>
                 ) : (
                   <>
-                    <MetricCard label="R² Score" value={metrics.r2_score?.toFixed(4)} color={metrics.r2_score > 0.7 ? "text-[#22c55e]" : "text-foreground"} />
+                    <MetricCard label="R² Score" value={metrics.r2_score?.toFixed(4)} color={metrics.r2_score > 0.7 ? "text-success" : "text-foreground"} />
                     <MetricCard label="MAE" value={metrics.mae?.toFixed(4)} />
                     <MetricCard label="MSE" value={metrics.mse?.toFixed(4)} />
                     <MetricCard label="RMSE" value={metrics.rmse?.toFixed(4)} />
@@ -223,17 +223,17 @@ export default function MLModels() {
                     <tbody className="divide-y divide-border/50">
                       {predictions.slice(0, 20).map((p, i) => (
                         <tr key={i} className={cn(
-                          "transition-colors hover:bg-accent/40",
-                          isClassification && !p.correct && "bg-[#3d0d18]"
+                          "transition-colors hover:bg-accent",
+                          isClassification && !p.correct && "bg-destructive/10"
                         )}>
                           <td className="py-2 font-mono text-[10px] text-muted-foreground">{p.id}</td>
                           <td className="py-2 font-semibold text-foreground font-sans">{String(p.actual)}</td>
-                          <td className="py-2 font-semibold text-[#0099ff] font-sans">{String(p.predicted)}</td>
+                          <td className="py-2 font-semibold text-primary font-sans">{String(p.predicted)}</td>
                           {isClassification && (
                             <td className="py-2">
                               {p.correct
-                                ? <CheckCircle2 size={12} className="text-[#22c55e]" />
-                                : <AlertCircle size={12} className="text-[#ff5577]" />
+                                ? <CheckCircle2 size={12} className="text-success" />
+                                : <AlertCircle size={12} className="text-destructive" />
                               }
                             </td>
                           )}
@@ -314,7 +314,7 @@ export default function MLModels() {
                     <BrainCircuit size={16} />
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
-                    <span className="px-2 py-0.5 bg-[#002a45] text-[#0099ff] border border-[#0099ff]/40 rounded-full text-[9px] font-bold font-mono uppercase tracking-wider">
+                    <span className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/40 rounded-full text-[9px] font-bold font-mono uppercase tracking-wider">
                       ML Model
                     </span>
                     {ml.task_type && (
@@ -325,7 +325,7 @@ export default function MLModels() {
                   </div>
                 </div>
 
-                <h3 className="font-semibold text-base tracking-tight text-foreground group-hover:text-[#0099ff] transition-colors font-sans mb-1">
+                <h3 className="font-semibold text-base tracking-tight text-foreground group-hover:text-primary transition-colors font-sans mb-1">
                   {model.title}
                 </h3>
                 <p className="text-[11px] text-muted-foreground font-sans mb-4 truncate">
@@ -345,10 +345,10 @@ export default function MLModels() {
                         {ml.task_type === 'classification' ? 'Accuracy' : 'R²'}
                       </span>
                       <span className={cn(
-                        "text-xs font-bold font-mono px-2 py-0.5 rounded-full border",
+                        "text-[9px] px-2.5 py-1 rounded-full text-sans font-semibold border",
                         ml.task_type === 'classification'
-                          ? (ml.metrics.accuracy > 0.8 ? 'bg-[#0a2e18] text-[#22c55e] border-[#22c55e]/40' : 'bg-background text-foreground border-border')
-                          : (ml.metrics.r2_score > 0.7 ? 'bg-[#0a2e18] text-[#22c55e] border-[#22c55e]/40' : 'bg-background text-foreground border-border')
+                          ? (ml.metrics.accuracy > 0.8 ? 'bg-success/10 text-success border-success/40' : 'bg-background text-foreground border-border')
+                          : (ml.metrics.r2_score > 0.7 ? 'bg-success/10 text-success border-success/40' : 'bg-background text-foreground border-border')
                       )}>
                         {ml.task_type === 'classification'
                           ? `${(ml.metrics.accuracy * 100).toFixed(1)}%`

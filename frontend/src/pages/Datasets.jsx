@@ -260,7 +260,7 @@ export default function Datasets() {
           <div className="flex flex-wrap gap-3 mt-4 md:mt-0">
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#f10303] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-destructive hover:border-destructive/20 rounded-full text-xs font-semibold transition-all shadow-sm"
             >
               <Trash2 size={14} />
               Drop

@@ -180,7 +180,7 @@ export default function MLBuilder() {
     return (
       <div className="flex-1 flex items-center justify-center min-h-screen bg-background">
         <div className="text-center space-y-3">
-          <AlertCircle size={36} className="text-[#ff5577] mx-auto" />
+          <AlertCircle size={36} className="text-destructive mx-auto" />
           <p className="text-sm font-semibold text-foreground font-sans">Dataset not found.</p>
           <Link to="/datasets" className="text-xs text-[#0099ff] hover:underline font-sans">← Back to Datasets</Link>
         </div>
@@ -378,9 +378,9 @@ export default function MLBuilder() {
             </div>
 
             {trainError && (
-              <div className="flex items-start gap-2.5 p-3.5 bg-[#3d0d18] border border-[#ff5577]/40 rounded-xl">
-                <AlertCircle size={14} className="text-[#ff5577] shrink-0 mt-0.5" />
-                <p className="text-xs text-[#ff5577] font-sans">{trainError}</p>
+              <div className="flex items-start gap-2.5 p-3.5 bg-destructive/10 border border-destructive/40 rounded-xl">
+                <AlertCircle size={14} className="text-destructive shrink-0 mt-0.5" />
+                <p className="text-xs text-destructive font-sans">{trainError}</p>
               </div>
             )}
 
@@ -403,7 +403,7 @@ export default function MLBuilder() {
             </button>
 
             {trainedReportId && (
-              <div className="flex items-center gap-2 p-3.5 bg-[#0a2e18] border border-[#22c55e]/40 rounded-xl">
+              <div className="flex items-center gap-2 p-3.5 bg-success/10 border border-success/40 rounded-xl">
                 <CheckCircle2 size={14} className="text-[#22c55e] shrink-0" />
                 <p className="text-xs text-[#22c55e] font-sans font-semibold">
                   Model trained successfully! Prediction Playground is now unlocked.
@@ -421,7 +421,7 @@ export default function MLBuilder() {
             </div>
             <h2 className="text-sm font-bold tracking-tight text-foreground font-sans">Prediction Playground</h2>
             {isPlaygroundReady && (
-              <span className="ml-auto px-2 py-0.5 bg-[#0a2e18] text-[#22c55e] border border-[#22c55e]/40 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider">
+              <span className="ml-auto px-2 py-0.5 bg-success/10 text-success border border-success/40 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider">
                 Live
               </span>
             )}
@@ -485,9 +485,9 @@ export default function MLBuilder() {
               </div>
 
               {predError && (
-                <div className="flex items-start gap-2.5 p-3.5 bg-[#3d0d18] border border-[#ff5577]/40 rounded-xl">
-                  <AlertCircle size={14} className="text-[#ff5577] shrink-0 mt-0.5" />
-                  <p className="text-xs text-[#ff5577] font-sans">{predError}</p>
+                <div className="flex items-start gap-2.5 p-3.5 bg-destructive/10 border border-destructive/40 rounded-xl">
+                  <AlertCircle size={14} className="text-destructive shrink-0 mt-0.5" />
+                  <p className="text-xs text-destructive font-sans">{predError}</p>
                 </div>
               )}
 
@@ -515,7 +515,7 @@ export default function MLBuilder() {
                   "rounded-[20px] p-6 border shadow-lg animate-in fade-in duration-200",
                   predResult.task_type === 'classification'
                     ? "bg-gradient-to-br from-[#6a4cf5] to-[#d44df0] border-[#6a4cf5]/30 text-white"
-                    : "bg-gradient-to-br from-[#ff7a3d] to-[#ff5577] border-[#ff7a3d]/30 text-white"
+                    : "bg-destructive text-destructive-foreground border-destructive/30"
                 )}>
                   <div className="flex items-start justify-between gap-4">
                     <div>

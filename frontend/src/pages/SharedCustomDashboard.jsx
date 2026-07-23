@@ -15,7 +15,7 @@ const getThemeColors = (theme) => {
     case 'cyberpunk': return ['#0ff', '#f0f', '#39ff14', '#fff01f', '#00ffcc', '#ff0055', '#bb00ff', '#0055ff'];
     case 'ocean': return ['#0ea5e9', '#0284c7', '#0369a1', '#075985', '#38bdf8', '#7dd3fc', '#bae6fd', '#e0f2fe'];
     case 'sunset': return ['#f97316', '#ea580c', '#c2410c', '#9a3412', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5'];
-    default: return ['#f10303', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
+    default: return ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
   }
 };
 
@@ -252,7 +252,7 @@ export default function SharedCustomDashboard() {
       {/* Read-Only Top Banner */}
       <div className="w-full bg-card border-b border-border py-3 px-6 flex justify-between items-center text-xs font-semibold shadow-sm z-50">
         <div className="flex items-center gap-2">
-          <span className="w-5 h-5 rounded-md bg-gradient-to-br from-[#f10303] to-[#ff5577] flex items-center justify-center text-white text-[10px]">if</span>
+          <span className="w-5 h-5 rounded-md bg-gradient-to-br from-destructive to-destructive flex items-center justify-center text-destructive-foreground text-[10px]">if</span>
           <span className="text-foreground tracking-tight font-sans">InsightFlow <span className="text-muted-foreground/50 mx-1">|</span> Shared Dashboard</span>
         </div>
         <div className="text-muted-foreground hidden sm:block">Interactive View</div>

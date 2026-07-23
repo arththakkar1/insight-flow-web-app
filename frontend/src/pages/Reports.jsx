@@ -201,7 +201,7 @@ export default function Reports() {
           <div className="flex gap-2.5">
             <button 
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-[#ff5577] hover:border-[#ff5577]/20 rounded-full text-xs font-semibold transition-all shadow-sm"
+              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-destructive hover:border-destructive/20 rounded-full text-xs font-semibold transition-all shadow-sm"
             >
               <Trash2 size={14} />
               Delete Report
@@ -304,7 +304,7 @@ export default function Reports() {
                               <td className="px-4 py-2 text-foreground">{pt.predicted}</td>
                               <td className="px-4 py-2 text-right">
                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-sans font-semibold border ${
-                                  pt.correct ? 'bg-[#0a2e18] text-[#22c55e] border-[#22c55e]/40' : 'bg-[#3d0d18] text-[#ff5577] border-[#ff5577]/40'
+                                  pt.correct ? 'bg-success/10 text-success border-success/40' : 'bg-destructive/10 text-destructive border-destructive/40'
                                 }`}>
                                   {pt.correct ? 'Correct' : 'Mismatch'}
                                 </span>

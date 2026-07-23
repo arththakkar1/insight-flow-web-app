@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ReactFlow,
-  MiniMap,
   Controls,
   Background,
   useNodesState,
@@ -20,12 +19,12 @@ import { apiFetch } from '../utils/api';
 // Custom Node Component to look like a database table
 const TableNode = ({ data }) => {
   return (
-    <div className="bg-card rounded-[15px] shadow-lg border border-border w-56 text-sm overflow-hidden group hover:border-primary/50 transition-colors">
-      <div className="bg-background border-b border-border text-foreground p-3 flex items-center font-bold tracking-tight">
+    <div className="bg-card rounded-xl shadow-lg border border-border w-56 text-sm group hover:border-primary/50 transition-colors">
+      <div className="bg-muted/50 border-b border-border text-foreground p-3 flex items-center font-bold tracking-tight rounded-t-xl">
         <Database className="w-4 h-4 mr-2 text-primary" />
         {data.label}
       </div>
-      <div className="p-2 flex flex-col space-y-0 bg-card">
+      <div className="p-2 flex flex-col space-y-0 bg-card rounded-b-xl">
         {data.columns.map((col, idx) => (
           <div key={idx} className="flex justify-between items-center relative py-1.5 px-2 hover:bg-accent rounded-md transition-colors">
             <span className="text-foreground text-xs font-sans font-medium truncate pr-2">{col.name}</span>
@@ -170,8 +169,7 @@ export default function ModelBuilder() {
           className="bg-background"
         >
           <Controls className="bg-card border-border shadow-md" />
-          <MiniMap className="bg-card border-border shadow-md mask-image-rounded" nodeColor="hsl(var(--muted-foreground))" maskColor="hsl(var(--background)/0.6)" />
-          <Background variant="dots" gap={16} size={1} color="hsl(var(--border))" />
+          <Background variant="dots" gap={16} size={1} color="#a1a1aa" />
         </ReactFlow>
       </div>
     </motion.div>

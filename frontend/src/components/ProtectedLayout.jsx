@@ -105,7 +105,7 @@ export default function ProtectedLayout() {
             
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-[#f10303] hover:bg-[#000000] transition-all text-left w-full mt-0.5 cursor-pointer"
+              className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-all text-left w-full mt-0.5 cursor-pointer"
             >
               <Trash2 size={16} />
               Manage Data
@@ -114,7 +114,7 @@ export default function ProtectedLayout() {
             <div className="flex items-center justify-between px-3 py-2 mt-3 pt-3 border-t border-border">
               <button 
                 onClick={handleLogout}
-                className="flex items-center gap-2.5 text-sm font-medium text-muted-foreground hover:text-[#ff5577] transition-colors cursor-pointer"
+                className="flex items-center gap-2.5 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
               >
                 <LogOut size={16} />
                 Log out
@@ -214,7 +214,7 @@ export default function ProtectedLayout() {
                 })}
                 <button
                   onClick={() => { setIsDeleteModalOpen(true); setIsMobileMoreOpen(false); }}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-[#f10303] hover:bg-[#ff5577]/10 transition-all text-left cursor-pointer"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-destructive hover:bg-destructive/10 transition-all text-left cursor-pointer"
                 >
                   <Trash2 size={18} />
                   Manage Data
@@ -222,7 +222,7 @@ export default function ProtectedLayout() {
                 <div className="flex items-center justify-between px-4 py-3 border-t border-border mt-1">
                   <button 
                     onClick={handleLogout}
-                    className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-[#ff5577] transition-colors cursor-pointer"
+                    className="flex items-center gap-3 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
                   >
                     <LogOut size={18} />
                     Log out
