@@ -23,8 +23,8 @@ graph TD
     end
     
     subgraph "Phase 3: Output & Presentation"
-        E --> F["Visualization & Dashboard Planning"]
-        F --> H["Export Reports & Dashboards"]
+        E --> F["Custom Dashboard Builder"]
+        F --> H["Export & External Sharing"]
         ML3 --> H
     end
     
@@ -56,12 +56,13 @@ graph TD
    - Users can utilize the **Machine Learning Builder** to automatically train models on cleaned datasets.
    - Evaluate model performance and use the prediction interface to run **Predictions & generate ML Reports**.
 
-6. **Visualization & Dashboard Planning**
+6. **Visualization & Custom Dashboard Building**
    - The **Visualization Recommendation Engine** analyzes the selected metrics and dimensions, suggesting the most effective charts.
-   - The **Dashboard Blueprint Generator** organizes these charts into a cohesive, interactive dashboard layout, providing a complete structural guide.
+   - Using the **Custom Dashboard Builder**, users assemble these charts into interactive, branded layouts (e.g., Executive Summary, Spotify-style grid) and customize themes and fonts.
 
 7. **Export & Sharing**
-   - Users can **Export Reports & Dashboards** generated in the previous steps for external presentation or archival.
+   - Users can export generated **Reports & Dashboards** for offline use.
+   - Users can also generate secure, token-based shareable links to collaborate with external stakeholders who do not have an InsightFlow account.
 
 8. **Interactive Exploration**
    - Throughout the process, users can interact with the **AI Analytics Assistant** via natural language to ask clarifying questions, request specific custom metrics, or seek guidance on data interpretation.

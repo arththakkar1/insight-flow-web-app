@@ -15,6 +15,7 @@ graph TD
         Engine2 --> Engine3["Data Modeling Engine"]
         Engine3 --> Engine4["DAX Generator Engine"]
         Engine4 --> Engine5["Visualization Engine"]
+        Engine2 -.-> MLEngine["Machine Learning Engine"]
         
         Assistant(("AI Analytics Assistant")) -.->|"Injects NLP Context"| Engine1
         Assistant -.->|"Injects NLP Context"| Engine2
@@ -23,7 +24,11 @@ graph TD
         Assistant -.->|"Injects NLP Context"| Engine5
     end
     
-    Engine5 --> Output["Dashboard Blueprint & Insights"]
+    Engine5 --> DashboardBuild["Custom Dashboard Builder"]
+    MLEngine --> MLPredict["ML Predictions & Reports"]
+    
+    DashboardBuild --> Share["External Sharing & Export"]
+    MLPredict --> Share
 ```
 
 ## Data Profiling & Cleaning
@@ -45,8 +50,19 @@ The platform analyzes relationships between datasets and generates **Data Modeli
 ## DAX Measure Generator
 By examining the available metrics and dimensions, InsightFlow suggests relevant DAX measures along with complete formulas and explanations (e.g., Total Sales, Profit Margin, Year-to-Date Sales, Month-over-Month Growth).
 
-## Visualizations and Dashboards
-To simplify dashboard creation, the **Visualization Recommendation System** suggests the most suitable charts based on the dataset and business objectives. The **Dashboard Blueprint Generator** provides a complete dashboard structure with recommended pages, KPIs, visualizations, filters, slicers, and drill-down capabilities.
+## Machine Learning Builder
+The platform features an integrated **Machine Learning Builder** that allows users to train predictive models on their cleaned datasets. Users can generate ML Reports to evaluate model performance and utilize the prediction interface to forecast outcomes directly from their data.
+
+## Visualizations and Custom Dashboard Builder
+To simplify dashboard creation, the **Visualization Recommendation System** suggests the most suitable charts based on the dataset and business objectives.
+
+Users can then leverage the **Custom Dashboard Builder** to:
+- Construct interactive dashboards using flexible layouts (e.g., Grid, Executive Summary, Spotify-style).
+- Apply custom themes and font pairings to match organizational branding.
+- Select and configure various charts including KPIs, Line, Bar, Pie, and Scatter plots.
 
 ## AI Analytics Assistant
 An intelligent assistant that allows users to ask questions about their data in natural language. The assistant explains data quality issues, recommends analytical approaches, describes DAX calculations, and helps users understand how to derive meaningful insights.
+
+## Sharing & Collaboration
+InsightFlow facilitates collaboration by allowing users to securely share their insights with stakeholders. Users can generate public, token-based links for both **Custom Dashboards** and **Analytical Reports**. These links provide external users with interactive access to the data without requiring an InsightFlow account.

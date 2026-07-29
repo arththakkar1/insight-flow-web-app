@@ -12,6 +12,7 @@ class Dataset(models.Model):
     missing_values = models.IntegerField(default=0)
     duplicate_rows = models.IntegerField(default=0)
     schema_layout = models.JSONField(default=dict, blank=True)
+    custom_measures = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return self.name

@@ -29,10 +29,10 @@ class OpenRouterClient:
     def get_fallback_models(self, preferred_model):
         return [
             preferred_model,
-            "google/gemini-2.0-flash-lite-preview-02-05:free",
-            "meta-llama/llama-3.1-8b-instruct:free",
-            "google/gemma-2-9b-it:free",
-            "mistralai/mistral-nemo:free"
+            "openrouter/free",
+            "google/gemma-4-31b-it:free",
+            "poolside/laguna-m.1:free",
+            "cohere/north-mini-code:free"
         ]
 
     def generate_chat_response(self, messages, model="cohere/north-mini-code:free"):
@@ -91,6 +91,61 @@ class OpenRouterClient:
                     response_format={"type": "json_object"}
                 )
                 return response.choices[0].message.content
+            except Exception as e:
+                if idx == len(models_to_try) - 1:
+                    raise e
+                print(f"Model {current_model} failed with error: {e}. Trying next fallback...")
+
+    def generate_dashboard_config(self, dataset_info, model="openrouter/free"):
+        prompt = (
+            f"You are an expert BI Data Architect. Given the following dataset schema: {dataset_info}, "
+            "design a beautiful interactive dashboard.\n"
+            "Return EXACTLY AND ONLY a valid JSON object matching this schema:\n"
+            "{\n"
+            '  "layout": "executive-summary" | "spotify-grid" | "grid-2x2" | "split-horizontal",\n'
+            '  "theme_style": "dark-enterprise" | "pastel-minimal" | "analytical" | "ocean",\n'
+            '  "theme_font": "sans" | "mono" | "serif",\n'
+            '  "custom_measures": [\n'
+            '    {"name": "Measure Name", "formula": "Valid DAX Expression (e.g. SUM(Revenue) - SUM(Cost))"}\n'
+            "  ],\n"
+            '  "charts": [\n'
+            '    {"id": "1", "type": "KPI" | "Bar" | "Line" | "Pie" | "Scatter" | "Area", "title": "Chart Title", "xAxis": "ColumnName", "yAxis": "ColumnName"}\n'
+            "  ]\n"
+            "}\n"
+            "CRITICAL: You MUST ONLY use columns that explicitly exist in the provided dataset schema. Do NOT invent, hallucinate, or guess column names. Use exact casing.\n"
+            "Ensure you provide exactly 7 chart configurations in the array (ids 1 to 7)."
+        )
+        messages = [
+            {"role": "system", "content": "You are a senior BI Architect and data scientist. Output ONLY raw JSON, no markdown blocks."},
+            {"role": "user", "content": prompt}
+        ]
+        
+        models_to_try = self.get_fallback_models(model)
+        for idx, current_model in enumerate(models_to_try):
+            try:
+                response = self.client.chat.completions.create(
+                    model=current_model,
+                    messages=messages,
+                    temperature=0.4,
+                    max_tokens=1500
+                )
+                content = response.choices[0].message.content
+                if not content:
+                    raise ValueError("Empty response from LLM")
+                
+                import json, re
+                json_str = content
+                json_match = re.search(r'```json\s*(\{.*?\})\s*```', json_str, re.DOTALL)
+                if json_match:
+                    json_str = json_match.group(1)
+                else:
+                    json_match = re.search(r'(\{.*\})', json_str, re.DOTALL)
+                    if json_match:
+                        json_str = json_match.group(1)
+                
+                # Verify it parses correctly
+                json.loads(json_str)
+                return json_str
             except Exception as e:
                 if idx == len(models_to_try) - 1:
                     raise e

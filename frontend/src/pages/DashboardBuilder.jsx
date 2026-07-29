@@ -6,7 +6,7 @@ import {
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, ScatterChart, Scatter 
 } from 'recharts';
-import { LayoutDashboard, Play, Maximize2, LayoutGrid, Rows3, LayoutTemplate, Monitor, X, Share2, Copy, Check } from 'lucide-react';
+import { LayoutDashboard, Play, Maximize2, LayoutGrid, Rows3, LayoutTemplate, Monitor, X, Share2, Copy, Check, TrendingUp, TrendingDown, Minus, Plus, Calculator, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const getThemeColors = (theme) => {
@@ -17,6 +17,8 @@ const getThemeColors = (theme) => {
     case 'cyberpunk': return ['#0ff', '#f0f', '#39ff14', '#fff01f', '#00ffcc', '#ff0055', '#bb00ff', '#0055ff'];
     case 'ocean': return ['#0ea5e9', '#0284c7', '#0369a1', '#075985', '#38bdf8', '#7dd3fc', '#bae6fd', '#e0f2fe'];
     case 'sunset': return ['#f97316', '#ea580c', '#c2410c', '#9a3412', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5'];
+    case 'dark-enterprise': return ['#1F77B4', '#FF7F0E', '#2CA02C', '#D62728', '#9467BD', '#8C564B', '#E377C2', '#7F7F7F'];
+    case 'pastel-minimal': return ['#A8E6CF', '#DCEDC1', '#FFD3B6', '#FFAAA5', '#FF8B94', '#B2EBF2', '#B39DDB', '#C5E1A5'];
     default: return ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b'];
   }
 };
@@ -39,8 +41,13 @@ export default function DashboardBuilder() {
   const [selectedDatasetId, setSelectedDatasetId] = useState(datasetId || '');
   const [datasetData, setDatasetData] = useState([]);
   const [columns, setColumns] = useState([]);
+  const [customMeasures, setCustomMeasures] = useState([]);
+  const [showMeasureModal, setShowMeasureModal] = useState(false);
+  const [newMeasureName, setNewMeasureName] = useState('');
+  const [newMeasureFormula, setNewMeasureFormula] = useState('');
+  const [enrichedData, setEnrichedData] = useState([]);
   
-  const [layout, setLayout] = useState('grid-2x2'); // options: 'single', 'grid-2x2', 'split-horizontal', 'spotify-grid'
+  const [layout, setLayout] = useState('grid-2x2'); // options: 'single', 'grid-2x2', 'split-horizontal', 'spotify-grid', 'executive-summary'
   const [themeStyle, setThemeStyle] = useState('default');
   const [themeFont, setThemeFont] = useState('sans');
   
@@ -62,6 +69,7 @@ export default function DashboardBuilder() {
   const [shareLink, setShareLink] = useState('');
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
   const fetchDatasets = async () => {
     setLoading(true);
@@ -84,6 +92,12 @@ export default function DashboardBuilder() {
   const loadDatasetData = async (dsId) => {
     setDataLoading(true);
     try {
+      const detailsRes = await apiFetch(`http://localhost:8000/api/datasets/${dsId}/`);
+      if (detailsRes.ok) {
+        const detailsData = await detailsRes.json();
+        setCustomMeasures(detailsData.custom_measures || []);
+      }
+
       const res = await apiFetch(`http://localhost:8000/api/datasets/${dsId}/data/`);
       if (res.ok) {
         const data = await res.json();
@@ -106,6 +120,70 @@ export default function DashboardBuilder() {
     }
     setDataLoading(false);
   };
+
+  const saveCustomMeasures = async (measures) => {
+    if (!selectedDatasetId) return;
+    try {
+      await apiFetch(`http://localhost:8000/api/datasets/${selectedDatasetId}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ custom_measures: measures })
+      });
+    } catch(e) {
+      console.error("Failed to save measures", e);
+    }
+  };
+
+  useEffect(() => {
+    // Process custom DAX-like measures
+    if (datasetData.length === 0) {
+      setEnrichedData([]);
+      return;
+    }
+    
+    // Define DAX-like functions for eval scope
+    // eslint-disable-next-line no-unused-vars
+    const SUM = (...args) => args.reduce((a,b) => (Number(a)||0) + (Number(b)||0), 0);
+    // eslint-disable-next-line no-unused-vars
+    const AVERAGE = (...args) => args.length ? SUM(...args) / args.length : 0;
+    // eslint-disable-next-line no-unused-vars
+    const MAX = (...args) => Math.max(...args.map(a => Number(a)||0));
+    // eslint-disable-next-line no-unused-vars
+    const MIN = (...args) => Math.min(...args.map(a => Number(a)||0));
+    // eslint-disable-next-line no-unused-vars
+    const IF = (condition, t, f) => condition ? t : f;
+    // eslint-disable-next-line no-unused-vars
+    const DIVIDE = (num, den, alt = 0) => (Number(den) === 0 ? alt : (Number(num) / Number(den)));
+
+    try {
+      const newData = datasetData.map(row => {
+        const newRow = { ...row };
+        customMeasures.forEach(measure => {
+          try {
+            let formula = measure.formula;
+            columns.forEach(col => {
+              if (formula.includes(col)) {
+                const val = Number(row[col]) || 0;
+                const regex = new RegExp(`\\b${col}\\b`, 'g');
+                formula = formula.replace(regex, val);
+              }
+            });
+            // eslint-disable-next-line no-eval
+            const result = eval(formula);
+            newRow[measure.name] = (isNaN(result) || result === null || result === Infinity || result === -Infinity) ? 0 : Number(result);
+          } catch(e) {
+            newRow[measure.name] = 0;
+          }
+        });
+        return newRow;
+      });
+      setEnrichedData(newData);
+    } catch(e) {
+      setEnrichedData(datasetData);
+    }
+  }, [datasetData, customMeasures, columns]);
+
+  const allColumns = [...columns, ...customMeasures.map(m => m.name)];
 
   useEffect(() => {
     if (datasetId) {
@@ -150,7 +228,40 @@ export default function DashboardBuilder() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-
+  const generateDashboardWithAI = async () => {
+    if (!selectedDatasetId) return;
+    setIsGeneratingAI(true);
+    try {
+      const res = await apiFetch(`http://localhost:8000/api/datasets/${selectedDatasetId}/generate-dashboard/`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        const config = await res.json();
+        if (config.layout) setLayout(config.layout);
+        if (config.theme_style) setThemeStyle(config.theme_style);
+        if (config.theme_font) setThemeFont(config.theme_font);
+        if (config.custom_measures) {
+          setCustomMeasures(config.custom_measures);
+          saveCustomMeasures(config.custom_measures);
+        }
+        if (config.charts) {
+          // Merge AI charts with existing array (override first ones, keep rest if any)
+          const newCharts = [...charts];
+          config.charts.forEach((aiChart, idx) => {
+            if (idx < newCharts.length) {
+              newCharts[idx] = { ...newCharts[idx], ...aiChart };
+            }
+          });
+          setCharts(newCharts);
+        }
+      } else {
+        console.error("AI Generation failed");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setIsGeneratingAI(false);
+  };
 
   const handleDatasetSelect = (dsId) => {
     if (!dsId) {
@@ -167,14 +278,20 @@ export default function DashboardBuilder() {
   };
 
   const renderChart = (chartConfig, index, currentColors) => {
-    if (!datasetData || datasetData.length === 0) {
+    if (!enrichedData || enrichedData.length === 0) {
       return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">No Data</div>;
     }
-    if (!chartConfig.xAxis || !chartConfig.yAxis) {
-       return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">Configure Axes</div>;
+    if (chartConfig.type === 'KPI') {
+      if (!chartConfig.yAxis) {
+        return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">Configure Metric (Y-Axis)</div>;
+      }
+    } else {
+      if (!chartConfig.xAxis || !chartConfig.yAxis) {
+         return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">Configure Axes</div>;
+      }
     }
 
-    const { type, xAxis, yAxis } = chartConfig;
+    const { type, xAxis, yAxis, topN } = chartConfig;
     const color = currentColors[index % currentColors.length];
     
     const CustomTooltipStyle = {
@@ -185,10 +302,18 @@ export default function DashboardBuilder() {
       boxShadow: themeStyle === 'cyberpunk' ? '0 0 10px rgba(0, 255, 255, 0.2)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
     };
 
+    let chartData = [...enrichedData];
+    if (topN && type !== 'KPI' && type !== 'Pie') {
+      const limit = parseInt(topN, 10);
+      if (!isNaN(limit)) {
+        chartData = chartData.sort((a, b) => (Number(b[yAxis]) || 0) - (Number(a[yAxis]) || 0)).slice(0, limit);
+      }
+    }
+
     switch (type) {
       case 'KPI': {
         let value = 0;
-        const validData = datasetData.filter(d => d[yAxis] !== null && d[yAxis] !== undefined && d[yAxis] !== '');
+        const validData = enrichedData.filter(d => d[yAxis] !== null && d[yAxis] !== undefined && d[yAxis] !== '');
         if (validData.length > 0) {
           const sum = validData.reduce((acc, curr) => acc + (Number(curr[yAxis]) || 0), 0);
           if (chartConfig.aggregation === 'sum') value = sum;
@@ -198,9 +323,19 @@ export default function DashboardBuilder() {
           else value = sum / validData.length; // default average
         }
         
+        // Pseudo-trend logic (just for visual conditional formatting)
+        const isPositive = value > 0;
+        const TrendIcon = value === 0 ? Minus : (isPositive ? TrendingUp : TrendingDown);
+        const trendColor = value === 0 ? 'text-muted-foreground' : (isPositive ? 'text-success' : 'text-destructive');
+        
         return (
-          <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center">
-            <span className="text-4xl md:text-5xl font-bold tracking-tighter drop-shadow-sm" style={{ color: color, textShadow: themeStyle === 'cyberpunk' ? `0 0 10px ${color}` : 'none' }}>
+          <div className="flex flex-col items-center justify-center h-full w-full p-4 text-center relative">
+            {value !== 0 && (
+               <div className={`absolute top-4 right-4 ${trendColor} bg-background/50 p-1.5 rounded-full`}>
+                 <TrendIcon size={16} />
+               </div>
+            )}
+            <span className="text-4xl md:text-5xl font-bold tracking-tighter drop-shadow-sm" style={{ color: color, textShadow: (themeStyle === 'cyberpunk' || themeStyle === 'dark-enterprise') ? `0 0 10px ${color}55` : 'none' }}>
               {value % 1 !== 0 ? value.toFixed(2) : value}
             </span>
             <span className="text-[10px] md:text-xs uppercase tracking-widest opacity-60 mt-3 font-semibold text-inherit">
@@ -209,23 +344,25 @@ export default function DashboardBuilder() {
           </div>
         );
       }
-      case 'Line':
+      case 'Line': {
+        const sortedLineData = [...chartData].sort((a, b) => a[xAxis] > b[xAxis] ? 1 : -1);
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={datasetData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <LineChart data={sortedLineData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
-              <XAxis dataKey={xAxis} tick={{fontSize: 10}} />
-              <YAxis tick={{fontSize: 10}} />
+              <XAxis dataKey={xAxis} tick={{fontSize: 10}} name={xAxis} />
+              <YAxis tick={{fontSize: 10}} name={yAxis} />
               <RechartsTooltip contentStyle={CustomTooltipStyle} />
               <Legend />
-              <Line type="monotone" dataKey={yAxis} stroke={color} strokeWidth={3} dot={false} activeDot={{ r: 8 }} />
+              <Line type="monotone" dataKey={yAxis} stroke={color} strokeWidth={3} dot={{r: 4, fill: color, strokeWidth: 0}} activeDot={{r: 6}} />
             </LineChart>
           </ResponsiveContainer>
         );
+      }
       case 'Bar':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={datasetData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
               <XAxis dataKey={xAxis} tick={{fontSize: 10}} />
               <YAxis tick={{fontSize: 10}} />
@@ -235,10 +372,11 @@ export default function DashboardBuilder() {
             </BarChart>
           </ResponsiveContainer>
         );
-      case 'Area':
+      case 'Area': {
+        const sortedAreaData = [...chartData].sort((a, b) => a[xAxis] > b[xAxis] ? 1 : -1);
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={datasetData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={sortedAreaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
               <XAxis dataKey={xAxis} tick={{fontSize: 10}} />
               <YAxis tick={{fontSize: 10}} />
@@ -248,6 +386,7 @@ export default function DashboardBuilder() {
             </AreaChart>
           </ResponsiveContainer>
         );
+      }
       case 'Scatter':
         return (
           <ResponsiveContainer width="100%" height="100%">
@@ -257,25 +396,26 @@ export default function DashboardBuilder() {
               <YAxis dataKey={yAxis} tick={{fontSize: 10}} name={yAxis} />
               <RechartsTooltip cursor={{strokeDasharray: '3 3'}} contentStyle={CustomTooltipStyle} />
               <Legend />
-              <Scatter name={`${xAxis} vs ${yAxis}`} data={datasetData} fill={color} />
+              <Scatter name={`${xAxis} vs ${yAxis}`} data={chartData} fill={color} />
             </ScatterChart>
           </ResponsiveContainer>
         );
       case 'Pie': {
         const aggs = {};
-        datasetData.forEach(d => {
+        enrichedData.forEach(d => {
           const k = d[xAxis];
           const v = Number(d[yAxis]) || 0;
           if (k) aggs[k] = (aggs[k] || 0) + v;
         });
-        const pieData = Object.keys(aggs).map(k => ({ name: k, value: aggs[k] })).sort((a,b) => b.value - a.value).slice(0, 10);
+        const limit = topN ? parseInt(topN, 10) : 10;
+        const pieData = Object.keys(aggs).map(k => ({ name: k, value: aggs[k] })).sort((a,b) => b.value - a.value).slice(0, limit);
         
         return (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <RechartsTooltip contentStyle={CustomTooltipStyle} />
               <Legend />
-              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={80} stroke="none">
+              <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius="40%" outerRadius="80%" stroke="none">
                 {pieData.map((entry, idx) => (
                   <Cell key={`cell-${idx}`} fill={currentColors[idx % currentColors.length]} />
                 ))}
@@ -295,6 +435,7 @@ export default function DashboardBuilder() {
       case 'split-horizontal': return 'grid-cols-1 lg:grid-cols-1'; 
       case 'grid-2x2': return 'grid-cols-1 md:grid-cols-2';
       case 'spotify-grid': return 'grid-cols-1 md:grid-cols-4';
+      case 'executive-summary': return 'grid-cols-1 md:grid-cols-12';
       default: return 'grid-cols-1 md:grid-cols-2';
     }
   };
@@ -312,6 +453,13 @@ export default function DashboardBuilder() {
         default: return 'col-span-1';
       }
     }
+    if (layout === 'executive-summary') {
+      if (index >= 0 && index <= 3) return 'col-span-1 md:col-span-3 min-h-[140px]';
+      if (index === 4) return 'col-span-1 md:col-span-8 min-h-[350px]';
+      if (index === 5) return 'col-span-1 md:col-span-4 min-h-[350px]';
+      if (index === 6) return 'col-span-1 md:col-span-12 min-h-[300px]';
+      return 'col-span-1 md:col-span-12';
+    }
     return layout === 'single' ? 'min-h-[500px]' : 'min-h-[300px]';
   };
   
@@ -320,6 +468,7 @@ export default function DashboardBuilder() {
       case 'single': return charts.slice(0, 1);
       case 'split-horizontal': return charts.slice(0, 2);
       case 'spotify-grid': return charts.slice(0, 7);
+      case 'executive-summary': return charts.slice(0, 7);
       case 'grid-2x2': default: return charts.slice(0, 4);
     }
   };
@@ -340,7 +489,7 @@ export default function DashboardBuilder() {
   };
 
   return (
-    <div className={`transition-colors duration-500 h-full min-h-0 flex flex-col ${isFullScreen ? `overflow-y-auto ${getFullscreenBg()}` : 'bg-background pb-20 md:pb-0'} text-foreground ${getFontClass(themeFont)}`}>
+    <div className={`transition-colors duration-500 min-h-full flex flex-col overflow-y-auto ${isFullScreen ? `${getFullscreenBg()} fixed inset-0 z-[100]` : 'bg-background pb-20 md:pb-0'} text-foreground ${getFontClass(themeFont)}`}>
       
       {isFullScreen && (
         <button 
@@ -351,7 +500,7 @@ export default function DashboardBuilder() {
         </button>
       )}
 
-      <div className={`${isFullScreen ? 'p-4 md:p-8 max-w-[1600px]' : 'max-w-7xl p-4 md:p-8'} mx-auto w-full flex flex-col min-h-0 h-full`}>
+      <div className={`${isFullScreen ? 'p-4 md:p-8 max-w-[1600px] min-h-0 h-full' : 'max-w-7xl p-4 md:p-8'} mx-auto w-full flex flex-col flex-1`}>
         
         {/* Header - Hidden in Full Screen */}
         {!isFullScreen && (
@@ -378,7 +527,9 @@ export default function DashboardBuilder() {
                   {value: "analytical", label: "Analytical Light"},
                   {value: "cyberpunk", label: "Neon Cyberpunk"},
                   {value: "ocean", label: "Ocean Blue"},
-                  {value: "sunset", label: "Sunset Orange"}
+                  {value: "sunset", label: "Sunset Orange"},
+                  {value: "dark-enterprise", label: "Dark Enterprise (Vault)"},
+                  {value: "pastel-minimal", label: "Pastel Minimal (Vault)"}
                 ]}
                 className="w-[140px]"
                 triggerClassName="bg-transparent border-none p-1 text-xs shadow-none hover:bg-transparent text-foreground"
@@ -417,6 +568,26 @@ export default function DashboardBuilder() {
                   className="w-full"
                 />
                 {dataLoading && <p className="text-xs text-muted-foreground mt-3 font-mono animate-pulse">Fetching dataset records...</p>}
+                
+                {selectedDatasetId && (
+                  <button 
+                    onClick={generateDashboardWithAI}
+                    disabled={isGeneratingAI || dataLoading}
+                    className="w-full mt-4 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white p-3 rounded-xl shadow-md transition-all font-bold disabled:opacity-50"
+                  >
+                    {isGeneratingAI ? (
+                      <span className="flex items-center gap-2">
+                        <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+                        Generating...
+                      </span>
+                    ) : (
+                      <>
+                        <Sparkles size={16} />
+                        AI Autopilot
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
 
               {/* Layout Selection */}
@@ -451,7 +622,52 @@ export default function DashboardBuilder() {
                     <LayoutTemplate size={16} className="mb-2" />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-center">Spotify<br/>Template</span>
                   </button>
+                  <button 
+                    onClick={() => setLayout('executive-summary')}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all cursor-pointer ${layout === 'executive-summary' ? 'bg-[#1F77B4]/20 border-[#1F77B4] text-[#1F77B4]' : 'bg-background border-border hover:bg-accent hover:border-foreground/30'}`}
+                  >
+                    <LayoutTemplate size={16} className="mb-2" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-center">Exec<br/>Summary</span>
+                  </button>
                 </div>
+              </div>
+
+              {/* Custom Measures */}
+              <div className="bg-card border border-border p-5 rounded-[20px] shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-sm font-bold font-mono uppercase tracking-wider">3. Custom Measures</h2>
+                  <button 
+                    onClick={() => setShowMeasureModal(true)}
+                    className="p-1 bg-accent hover:bg-foreground hover:text-background rounded-md transition-colors"
+                    title="Add DAX Measure"
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+                {customMeasures.length === 0 ? (
+                  <p className="text-xs text-muted-foreground font-mono">No custom measures defined.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {customMeasures.map((m, i) => (
+                       <div key={i} className="flex justify-between items-center bg-background border border-border p-2 rounded-lg">
+                         <div className="flex-1 min-w-0 pr-2">
+                           <div className="text-[11px] font-bold truncate">{m.name}</div>
+                           <div className="text-[9px] font-mono text-muted-foreground truncate">{m.formula}</div>
+                         </div>
+                         <button 
+                           onClick={() => {
+                             const updated = customMeasures.filter((_, idx) => idx !== i);
+                             setCustomMeasures(updated);
+                             saveCustomMeasures(updated);
+                           }}
+                           className="text-destructive hover:bg-destructive/10 p-1 rounded transition-colors"
+                         >
+                           <X size={12} />
+                         </button>
+                       </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -463,7 +679,7 @@ export default function DashboardBuilder() {
               {!isFullScreen && (
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-sm font-bold font-mono uppercase tracking-wider flex items-center gap-2">
-                    <Play size={14} className="text-destructive" /> 3. Live Dashboard Render
+                    <Play size={14} className="text-destructive" /> 4. Live Dashboard Render
                   </h2>
                   <div className="flex gap-2">
                     <button 
@@ -485,13 +701,15 @@ export default function DashboardBuilder() {
               )}
 
               {selectedDatasetId ? (
-                <div className={`grid ${getGridClass()} gap-4 flex-1 min-h-0 overflow-y-auto p-1 scrollbar-thin`}>
+                <div className={`grid ${getGridClass()} gap-4 flex-1 p-1`}>
                   <AnimatePresence mode="popLayout">
                     {getVisibleCharts().map((chart, index) => {
                       const isSpotify = themeStyle === 'spotify';
                       const isNetflix = themeStyle === 'netflix';
                       const isCyberpunk = themeStyle === 'cyberpunk';
                       const isAnalytical = themeStyle === 'analytical';
+                      const isDarkEnterprise = themeStyle === 'dark-enterprise';
+                      const isPastelMinimal = themeStyle === 'pastel-minimal';
                       
                       let cardStyle = {};
                       let cardClasses = `flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow ${getSlotClass(index)} `;
@@ -509,6 +727,14 @@ export default function DashboardBuilder() {
                         cardStyle = { backgroundColor: '#1F2833', borderColor: '#45A29E', boxShadow: '0 0 10px rgba(69, 162, 158, 0.2)' };
                         cardClasses += 'rounded-xl border text-[#C5C6C7]';
                         headerClasses += 'bg-[#0B0C10] border-[#45A29E] text-white';
+                      } else if (isDarkEnterprise) {
+                        cardStyle = { backgroundColor: '#1A1A24', borderColor: '#2D2D3D', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' };
+                        cardClasses += 'rounded-[4px] border text-[#E0E0E0]';
+                        headerClasses += 'bg-[#1A1A24] border-[#2D2D3D] text-[#E0E0E0]';
+                      } else if (isPastelMinimal) {
+                        cardStyle = { backgroundColor: '#FDFBF7', borderColor: '#E8E4D9', boxShadow: 'none' };
+                        cardClasses += 'rounded-[16px] border text-[#4A4A4A]';
+                        headerClasses += 'bg-[#FDFBF7] border-[#E8E4D9] text-[#4A4A4A]';
                       } else if (isAnalytical) {
                         cardStyle = { backgroundColor: '#ffffff', borderColor: '#e2e8f0' };
                         cardClasses += 'rounded-xl border text-slate-700 shadow-sm';
@@ -584,7 +810,7 @@ export default function DashboardBuilder() {
                                     <CustomSelect 
                                       value={chart.xAxis}
                                       onChange={(val) => updateChart(index, 'xAxis', val)}
-                                      options={[{value: "", label: "Axis..."}, ...columns.map(c => ({value: c, label: c}))]}
+                                      options={[{value: "", label: "Axis..."}, ...allColumns.map(c => ({value: c, label: c}))]}
                                       className="w-[100px]"
                                       triggerClassName="bg-transparent border-none p-1 text-[10px] truncate shadow-none hover:bg-transparent text-inherit font-mono"
                                     />
@@ -594,10 +820,28 @@ export default function DashboardBuilder() {
                                 <CustomSelect 
                                   value={chart.yAxis}
                                   onChange={(val) => updateChart(index, 'yAxis', val)}
-                                  options={[{value: "", label: "Metric..."}, ...columns.map(c => ({value: c, label: c}))]}
+                                  options={[{value: "", label: "Metric..."}, ...allColumns.map(c => ({value: c, label: c}))]}
                                   className="w-[100px]"
                                   triggerClassName="bg-transparent border-none p-1 text-[10px] truncate shadow-none hover:bg-transparent text-inherit font-mono"
                                 />
+                                {chart.type !== 'KPI' && (
+                                  <>
+                                    <span className="font-mono text-[10px] opacity-70 ml-1">Limit:</span>
+                                    <CustomSelect 
+                                      value={chart.topN || ""}
+                                      onChange={(val) => updateChart(index, 'topN', val)}
+                                      options={[
+                                        {value: "", label: "All"},
+                                        {value: "5", label: "Top 5"},
+                                        {value: "10", label: "Top 10"},
+                                        {value: "20", label: "Top 20"},
+                                        {value: "50", label: "Top 50"}
+                                      ]}
+                                      className="w-[80px]"
+                                      triggerClassName="bg-transparent border-none p-1 text-[10px] uppercase shadow-none hover:bg-transparent text-inherit font-mono"
+                                    />
+                                  </>
+                                )}
                               </div>
                             </div>
                           )}
@@ -649,6 +893,108 @@ export default function DashboardBuilder() {
                 {copied ? <Check size={14} /> : <Copy size={14} />}
                 {copied ? 'Copied!' : 'Copy'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showMeasureModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-[20px] shadow-lg w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setShowMeasureModal(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <X size={16} />
+            </button>
+            <h3 className="text-xl font-bold tracking-tight mb-2 text-foreground font-sans flex items-center gap-2">
+              <Calculator size={20} className="text-destructive" /> New DAX-like Measure
+            </h3>
+            <p className="text-xs text-muted-foreground font-sans mb-6">
+              Create a custom column by applying mathematical formulas to existing columns (e.g., <code className="font-mono bg-accent p-0.5 rounded">Sales - Cost</code>).
+            </p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase font-mono tracking-wider mb-1 block text-muted-foreground">Measure Name</label>
+                <input 
+                  type="text" 
+                  value={newMeasureName}
+                  onChange={(e) => setNewMeasureName(e.target.value)}
+                  placeholder="e.g. Profit Margin"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-destructive transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase font-mono tracking-wider mb-1 block text-muted-foreground">Formula</label>
+                <input 
+                  type="text" 
+                  value={newMeasureFormula}
+                  onChange={(e) => setNewMeasureFormula(e.target.value)}
+                  placeholder="e.g. Sales - Cost"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:border-destructive transition-colors"
+                />
+                
+                {(() => {
+                  const daxFunctions = ['SUM', 'AVERAGE', 'MAX', 'MIN', 'IF', 'DIVIDE'];
+                  const allSuggestions = [...columns, ...daxFunctions];
+
+                  const parts = newMeasureFormula.split(/([\s+\-*/(),]+)/);
+                  const lastWord = parts[parts.length - 1];
+                  const showSuggestions = lastWord.length > 0;
+                  const suggestions = showSuggestions 
+                    ? allSuggestions.filter(c => c.toLowerCase().includes(lastWord.toLowerCase()) && c !== lastWord)
+                    : [];
+
+                  return (
+                    <div className="mt-2 min-h-[32px]">
+                      {showSuggestions && suggestions.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5 items-center bg-destructive/10 p-2 rounded-lg border border-destructive/20 animate-in fade-in zoom-in-95 duration-200">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-destructive mr-1">Suggest:</span>
+                          {suggestions.map(col => (
+                            <button 
+                              key={col}
+                              onClick={() => {
+                                const newParts = [...parts];
+                                const isFunc = daxFunctions.includes(col);
+                                newParts[newParts.length - 1] = col + (isFunc ? '(' : ' ');
+                                setNewMeasureFormula(newParts.join(''));
+                              }}
+                              className={`px-2 py-1 bg-background border border-border text-foreground rounded hover:border-destructive hover:text-destructive text-[10px] font-mono transition-all shadow-sm ${daxFunctions.includes(col) ? 'text-destructive/80 font-bold' : ''}`}
+                            >
+                              {col}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-muted-foreground p-1 space-y-2">
+                          <p>Available columns: <span className="font-mono bg-accent/50 p-0.5 rounded text-foreground">{columns.join(', ')}</span></p>
+                          <p>DAX Functions: <span className="font-mono bg-accent/50 p-0.5 rounded text-foreground">{daxFunctions.join(', ')}</span></p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+              
+              <div className="pt-2">
+                <button
+                  onClick={() => {
+                    if (newMeasureName && newMeasureFormula) {
+                      const updated = [...customMeasures, { name: newMeasureName, formula: newMeasureFormula }];
+                      setCustomMeasures(updated);
+                      saveCustomMeasures(updated);
+                      setNewMeasureName('');
+                      setNewMeasureFormula('');
+                      setShowMeasureModal(false);
+                    }
+                  }}
+                  disabled={!newMeasureName || !newMeasureFormula}
+                  className="w-full px-4 py-2 bg-destructive text-destructive-foreground hover:opacity-90 rounded-xl text-sm font-bold transition-all shadow-sm disabled:opacity-50"
+                >
+                  Create Measure
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -328,7 +328,21 @@ class DatasetDetailView(APIView):
                 "duplicate_rows": dataset.duplicate_rows,
                 "status": dataset.status,
                 "preview_headers": preview_headers,
-                "preview_rows": preview_rows
+                "preview_rows": preview_rows,
+                "custom_measures": dataset.custom_measures
+            })
+        except Dataset.DoesNotExist:
+            return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    def patch(self, request, pk):
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+            if 'custom_measures' in request.data:
+                dataset.custom_measures = request.data['custom_measures']
+                dataset.save()
+            return Response({
+                "status": "updated",
+                "custom_measures": dataset.custom_measures
             })
         except Dataset.DoesNotExist:
             return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -345,6 +359,25 @@ class DatasetDetailView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Dataset.DoesNotExist:
             return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class DatasetGenerateDashboardView(APIView):
+    def post(self, request, pk):
+        try:
+            dataset = Dataset.objects.get(user=request.user, pk=pk)
+            columns = list(dataset.columns.all())
+            dataset_info = f"Dataset: {dataset.name}, Rows: {dataset.rows_count}, Columns: " + ", ".join([f"{c.name} ({c.type})" for c in columns])
+            
+            try:
+                import json
+                client = OpenRouterClient()
+                json_str = client.generate_dashboard_config(dataset_info)
+                data = json.loads(json_str)
+                return Response(data)
+            except Exception as e:
+                print(f"LLM Dashboard Generation failed: {str(e)}")
+                return Response({"error": "Failed to generate dashboard with AI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        except Dataset.DoesNotExist:
+            return Response({"error": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class DatasetGenerateReportView(APIView):
     def post(self, request, pk):

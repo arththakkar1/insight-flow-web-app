@@ -1,7 +1,7 @@
 import { apiFetch } from '../utils/api';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate, useOutletContext } from 'react-router-dom';
-import { PieChart, LineChart, BarChart, ChevronRight, FileText, Trash2, BrainCircuit, ArrowLeft, Share2, Check, Copy } from 'lucide-react';
+import { PieChart, LineChart, BarChart, ChevronRight, FileText, Trash2, BrainCircuit, ArrowLeft, Share2, Check, Copy, Calculator } from 'lucide-react';
 import { PromptModal } from '../components/ui/PromptModal';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -180,47 +180,51 @@ export default function Reports() {
     const mlSummary = isML ? reportDetails.visuals_data[0]?.details : null;
 
     return (
-      <div className="space-y-6">
-        <div className="flex items-center pb-4 gap-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-sans">
-          <Link to="/reports" className="hover:text-foreground transition-colors flex items-center gap-1">
-            <ArrowLeft size={12} /> Reports
-          </Link>
-          <ChevronRight size={12} />
-          <span className="text-foreground">{reportDetails.title}</span>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 border-b border-border pb-6 mb-8">
+      <div className="space-y-10 max-w-7xl mx-auto pt-6 px-4">
+        {/* F-Pattern Top Bar: Breadcrumbs (Top-Left) -> Actions (Top-Right) -> Title/Meta (Next row Left) */}
+        <div className="flex flex-col gap-6 border-b border-border pb-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[11px] font-bold text-muted-foreground uppercase tracking-wider font-sans">
+              <Link to="/reports" className="hover:text-foreground transition-colors flex items-center gap-1">
+                <ArrowLeft size={12} /> Reports
+              </Link>
+              <ChevronRight size={12} />
+              <span className="text-foreground">{reportDetails.title}</span>
+            </div>
+            <div className="flex gap-2.5">
+              <button 
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-destructive hover:border-destructive/20 rounded-full text-xs font-semibold transition-all shadow-sm"
+              >
+                <Trash2 size={14} />
+                Delete
+              </button>
+              <button 
+                onClick={handleShare}
+                disabled={isSharing}
+                className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-foreground rounded-full text-xs font-semibold transition-all shadow-sm"
+              >
+                <Share2 size={14} />
+                {isSharing ? 'Sharing...' : 'Share'}
+              </button>
+              <a 
+                href={`http://localhost:8000/api/reports/${reportId}/export/`}
+                download
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-full text-xs font-semibold transition-all shadow-sm"
+              >
+                Export PDF
+              </a>
+            </div>
+          </div>
           <div>
-            <h1 className="text-3xl font-medium tracking-tight text-foreground mb-1 font-sans">
+            <h1 className="text-4xl font-semibold tracking-tight text-foreground mb-2 font-sans">
               {reportDetails.title}
             </h1>
-            <p className="text-xs text-muted-foreground font-sans">
-              Generated for dataset <span className="font-semibold text-foreground">{reportDetails.dataset}</span> • {reportDetails.generated}
+            <p className="text-sm text-muted-foreground font-sans flex gap-2 items-center">
+              <span>Dataset: <span className="font-semibold text-foreground">{reportDetails.dataset}</span></span>
+              <span>•</span>
+              <span>{reportDetails.generated}</span>
             </p>
-          </div>
-          <div className="flex gap-2.5">
-            <button 
-              onClick={() => setShowDeleteConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-destructive hover:border-destructive/20 rounded-full text-xs font-semibold transition-all shadow-sm"
-            >
-              <Trash2 size={14} />
-              Delete Report
-            </button>
-            <button 
-              onClick={handleShare}
-              disabled={isSharing}
-              className="flex items-center gap-2 px-4 py-2 bg-card hover:bg-accent border border-border text-foreground rounded-full text-xs font-semibold transition-all shadow-sm"
-            >
-              <Share2 size={14} />
-              {isSharing ? 'Generating...' : 'Share'}
-            </button>
-            <a 
-              href={`http://localhost:8000/api/reports/${reportId}/export/`}
-              download
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground hover:opacity-90 rounded-full text-xs font-semibold transition-all shadow-sm"
-            >
-              Export PDF
-            </a>
           </div>
         </div>
 
@@ -370,13 +374,20 @@ export default function Reports() {
               })}
             </div>
 
-            <div className="mt-12 p-6 bg-card border border-border rounded-[20px] shadow-sm">
-              <h3 className="text-sm font-semibold tracking-tight mb-4 text-foreground font-sans">Generated DAX Measures</h3>
-              <div className="bg-background p-5 rounded-md font-mono text-xs overflow-x-auto text-muted-foreground leading-relaxed border border-border/50">
+            <div className="mt-12 p-8 bg-card border border-border rounded-[24px] shadow-sm">
+              <h3 className="text-lg font-bold tracking-tight mb-6 text-foreground font-sans flex items-center gap-2">
+                <Calculator className="text-[#0099ff]" size={20} /> Generated DAX Measures
+              </h3>
+              <div className="bg-[#1E1E1E] p-6 rounded-xl font-mono text-sm overflow-x-auto text-[#D4D4D4] leading-relaxed border border-[#333] shadow-inner">
                 {reportDetails.dax_data?.map((dax, index) => (
-                  <p key={index} className="mb-2 last:mb-0">
-                    <span className="text-foreground font-semibold font-sans block md:inline-block md:w-36">{dax.name}</span> = <span className="opacity-80">{dax.formula}</span>
-                  </p>
+                  <div key={index} className="mb-4 last:mb-0 flex items-start gap-4 hover:bg-[#2A2D2E] p-2 rounded transition-colors -mx-2">
+                    <div className="text-[#858585] text-xs pt-1 select-none w-4 text-right">{index + 1}</div>
+                    <div className="flex-1">
+                      <span className="text-[#4FC1FF] font-semibold">{dax.name}</span> 
+                      <span className="text-[#D4D4D4] mx-2">=</span> 
+                      <span className="text-[#CE9178]">{dax.formula}</span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

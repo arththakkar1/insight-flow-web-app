@@ -184,9 +184,21 @@ This reference guide details the endpoints, request parameters, and response str
 *   **Endpoint:** `GET /api/datasets/<dataset_id>/export/`
 *   **Response (200 OK):** Returns the cleaned dataset file (e.g., CSV or XLSX) for download.
 
+### Get Dataset Data
+*   **Endpoint:** `GET /api/datasets/<dataset_id>/data/`
+*   **Response (200 OK):** Returns the raw or cleaned data rows for a given dataset in JSON format.
+
+### Get Schema Layout
+*   **Endpoint:** `GET /api/datasets/<dataset_id>/schema-layout/`
+*   **Response (200 OK):** Returns the recommended schema structure (e.g., Star Schema layout) including node and edge definitions for visual rendering.
+
 ### Generate Report
 *   **Endpoint:** `POST /api/datasets/<dataset_id>/generate-report/`
 *   **Response (201 Created):** Creates a new analytics report based on the dataset.
+
+### Generate Dashboard
+*   **Endpoint:** `POST /api/datasets/<dataset_id>/generate-dashboard/`
+*   **Response (201 Created):** Generates a custom dashboard layout and configuration for the dataset.
 
 ### Generate ML Report
 *   **Endpoint:** `POST /api/datasets/<dataset_id>/generate-ml-report/`
@@ -299,3 +311,33 @@ This reference guide details the endpoints, request parameters, and response str
 ### Export Report
 *   **Endpoint:** `GET /api/reports/<report_id>/export/`
 *   **Response (200 OK):** Returns the report file (e.g., PDF or Markdown) for download.
+
+### Share Report
+*   **Endpoint:** `POST /api/reports/<report_id>/share/`
+*   **Response (200 OK):** Generates and returns a secure, shareable token for the report.
+
+### View Shared Report
+*   **Endpoint:** `GET /api/shared/report/<token>/`
+*   **Response (200 OK):** Returns the report data accessible via the public token.
+
+---
+
+## 6. Dashboards Endpoints
+
+### Share Custom Dashboard
+*   **Endpoint:** `POST /api/dashboard/share/`
+*   **Payload:**
+    ```json
+    {
+      "dataset_id": "ds_98765",
+      "layout": "grid-2x2",
+      "theme": "spotify",
+      "font": "mono",
+      "charts": [...]
+    }
+    ```
+*   **Response (200 OK):** Generates and returns a secure, shareable token link for the dashboard.
+
+### View Shared Custom Dashboard
+*   **Endpoint:** `GET /api/shared/dashboard/<token>/`
+*   **Response (200 OK):** Returns the dashboard configuration data accessible via the public token.
