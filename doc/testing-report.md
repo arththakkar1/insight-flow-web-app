@@ -11,6 +11,23 @@ An exhaustive test suite (`backend/api/tests.py`) was executed to verify all end
 - **Status**: 100% Pass Rate
 - **Coverage**: All API routes are covered and working as expected.
 
+### Core End-to-End Workflow Tested
+```mermaid
+flowchart TD
+    A([User Client]) -->|Authenticate| B[Auth & JWT Routes]
+    A -->|Upload CSV| C[Dataset Management]
+    
+    C -->|Trigger ML| D[AutoML & Training Engine]
+    C -->|Analyze Data| E[LLM Chat / Cleaning API]
+    
+    D --> F[Report Generation]
+    F -->|Export PDF| G[File System / media/]
+    F -->|Generate Link| H[Shareable View]
+    
+    E --> I[Dashboard Builder]
+    I -->|Save Config| H
+```
+
 ## Route-by-Route Testing Breakdown
 
 Here is an exhaustive breakdown of every single route, how it was tested, its expected behavior, and whether any bugs were discovered and fixed during the process.
