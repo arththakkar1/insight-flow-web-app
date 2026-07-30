@@ -64,3 +64,4 @@ Step-by-step guides for learning how to use InsightFlow from scratch.
 
 ### 3.4 `how-to/`
 Problem-oriented guides focused on accomplishing specific tasks, like generating a dashboard blueprint.
+- Added scikit-learn and xhtml2pdf to requirements.txt for Machine Learning and PDF export capabilities

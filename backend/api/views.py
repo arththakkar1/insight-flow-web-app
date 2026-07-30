@@ -274,8 +274,8 @@ class DatasetDataView(APIView):
             if os.path.exists(file_path):
                 # We limit to 500 rows to ensure the browser doesn't freeze when rendering many charts
                 df = pd.read_csv(file_path, nrows=500)
-                # Replace NaNs with None so JSON serializes them as null, keeping numeric types intact
-                df = df.where(pd.notnull(df), None)
+                # Replace NaNs with empty string so JSON serializes them without NaN errors
+                df = df.fillna("")
                 return Response({
                     "id": dataset.id,
                     "name": dataset.name,
@@ -1289,9 +1289,9 @@ class CustomDashboardShareView(APIView):
         try:
             data = request.data
             dataset_id = data.get('datasetId')
-            layout = data.get('layout')
-            theme_style = data.get('themeStyle')
-            theme_font = data.get('themeFont')
+            layout = data.get('layout', 'grid-2x2')
+            theme_style = data.get('themeStyle', 'default')
+            theme_font = data.get('themeFont', 'sans')
             charts = data.get('charts')
             
             import secrets

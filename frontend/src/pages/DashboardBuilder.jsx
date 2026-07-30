@@ -168,8 +168,8 @@ export default function DashboardBuilder() {
                 formula = formula.replace(regex, val);
               }
             });
-            // eslint-disable-next-line no-eval
-            const result = eval(formula);
+            const computeFormula = new Function('MAX', 'MIN', 'IF', 'DIVIDE', 'return ' + formula);
+            const result = computeFormula(MAX, MIN, IF, DIVIDE);
             newRow[measure.name] = (isNaN(result) || result === null || result === Infinity || result === -Infinity) ? 0 : Number(result);
           } catch(e) {
             newRow[measure.name] = 0;
