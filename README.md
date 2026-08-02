@@ -1,4 +1,4 @@
-# InsightFlow – AI-Powered Data Analytics Assistant(WIP)
+# InsightFlow – AI-Powered Data Analytics Assistant
 
 **InsightFlow** is a SaaS platform that automates the most time-consuming stages of the data analytics workflow. It helps data analysts, Power BI developers, students, and business users transform raw datasets into actionable insights by providing intelligent recommendations for data cleaning, data modeling, DAX measures, visualizations, and dashboard design.
 
@@ -36,33 +36,41 @@ InsightFlow is built with a modern technology stack:
 ## Installation & Running Locally
 
 ### Prerequisites
+
 - **Node.js** (v18+)
 - **Python** (v3.10+)
 - **PostgreSQL** running locally
 - **LM Studio** installed with a recommended model (e.g., Qwen 2.5 Coder)
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/arththakkar1/insight-flow-web-app.git
 cd insight-flow-web-app
 ```
 
 ### 2. Backend Setup
+
 Navigate to the backend directory, set up your virtual environment, and install dependencies:
+
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 pip install -r requirements.txt
 ```
+
 Configure your `.env` file with database credentials, apply migrations, and start the server:
+
 ```bash
 python manage.py migrate
 python manage.py runserver
 ```
 
 ### 3. Frontend Setup
+
 Open a new terminal, navigate to the frontend directory, install dependencies, and start the Vite development server:
+
 ```bash
 cd frontend
 npm install
@@ -70,6 +78,7 @@ npm run dev
 ```
 
 ### 4. AI Engine Setup
+
 1. Open **LM Studio**.
 2. Load a suitable model (e.g., Qwen 2.5 Coder).
 3. Start the Local Inference Server on Port `1234`.
