@@ -96,7 +96,18 @@ class OpenRouterClient:
                 content = response.choices[0].message.content
                 if content is None:
                     raise Exception("Model returned empty content")
-                return content
+                import json, re
+                json_str = content
+                json_match = re.search(r'```json\s*(\{.*?\})\s*```', json_str, re.DOTALL)
+                if json_match:
+                    json_str = json_match.group(1)
+                else:
+                    json_match = re.search(r'(\{.*\})', json_str, re.DOTALL)
+                    if json_match:
+                        json_str = json_match.group(1)
+                
+                json.loads(json_str) # Validate JSON before returning
+                return json_str
             except Exception as e:
                 if idx == len(models_to_try) - 1:
                     raise e

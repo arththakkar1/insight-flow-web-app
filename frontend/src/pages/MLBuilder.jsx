@@ -470,14 +470,25 @@ export default function MLBuilder() {
                           <label className="text-[11px] font-semibold text-foreground font-sans">{col}</label>
                           <span className="font-mono text-[9px] text-muted-foreground uppercase">{colTypeOf(col)}</span>
                         </div>
-                        <input
-                          type={isNumeric(col) ? 'number' : 'text'}
-                          step={isNumeric(col) ? 'any' : undefined}
-                          value={predInputs[col] ?? ''}
-                          onChange={(e) => setPredInputs(prev => ({ ...prev, [col]: e.target.value }))}
-                          placeholder={isNumeric(col) ? '0.0' : 'Enter value...'}
-                          className="w-full px-3 py-2 bg-background border border-border rounded-xl focus:outline-none focus:border-[#0099ff] focus:ring-1 focus:ring-[#0099ff]/40 text-xs font-semibold text-foreground transition-all font-mono placeholder:text-muted-foreground/50 placeholder:font-sans placeholder:font-normal"
-                        />
+                        {activeMeta.cat_features?.includes(col) ? (
+                          <CustomSelect
+                            value={predInputs[col] ?? ''}
+                            onChange={(val) => setPredInputs(prev => ({ ...prev, [col]: val }))}
+                            options={(activeMeta.cat_feature_options?.[col] || []).map(opt => ({
+                              value: opt,
+                              label: opt
+                            }))}
+                          />
+                        ) : (
+                          <input
+                            type={isNumeric(col) ? 'number' : 'text'}
+                            step={isNumeric(col) ? 'any' : undefined}
+                            value={predInputs[col] ?? ''}
+                            onChange={(e) => setPredInputs(prev => ({ ...prev, [col]: e.target.value }))}
+                            placeholder={isNumeric(col) ? '0.0' : 'Enter value...'}
+                            className="w-full px-3 py-2 bg-background border border-border rounded-xl focus:outline-none focus:border-[#0099ff] focus:ring-1 focus:ring-[#0099ff]/40 text-xs font-semibold text-foreground transition-all font-mono placeholder:text-muted-foreground/50 placeholder:font-sans placeholder:font-normal"
+                          />
+                        )}
                       </div>
                     </div>
                   ))}

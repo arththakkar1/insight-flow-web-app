@@ -35,7 +35,7 @@ graph TD
 When a user uploads one or more datasets (CSV, Excel, or database exports), InsightFlow performs a comprehensive **Data Profiling** process. It examines column types, missing values, duplicate records, unique values, outliers, date fields, categorical variables, and numerical measures.
 
 Based on this analysis, the **Data Cleaning Assistant** provides recommendations such as:
-- Handling missing values
+- Handling missing values (via median imputation for numeric columns)
 - Removing duplicates
 - Correcting data types
 - Standardizing formats
@@ -51,10 +51,10 @@ The platform analyzes relationships between datasets and generates **Data Modeli
 By examining the available metrics and dimensions, InsightFlow suggests relevant DAX measures along with complete formulas and explanations (e.g., Total Sales, Profit Margin, Year-to-Date Sales, Month-over-Month Growth).
 
 ## Machine Learning Builder
-The platform features an integrated **Machine Learning Builder** that allows users to train predictive models on their cleaned datasets. Users can generate ML Reports to evaluate model performance and utilize the prediction interface to forecast outcomes directly from their data.
+The platform features an integrated **Machine Learning Builder** that allows users to train predictive models on their cleaned datasets. Users can generate deterministic ML Reports to evaluate model performance and utilize the prediction interface to forecast outcomes directly from their data. The prediction interface intelligently detects categorical features and populates them into accessible dropdown menus for streamlined inference.
 
 ## Visualizations and Custom Dashboard Builder
-To simplify dashboard creation, the **Visualization Recommendation System** suggests the most suitable charts based on the dataset and business objectives.
+To simplify dashboard creation, the **Visualization Recommendation System** deterministically suggests the most suitable charts and generates robust dashboard blueprints based strictly on the dataset profiling heuristics.
 
 Users can then leverage the **Custom Dashboard Builder** to:
 - Construct interactive dashboards using flexible layouts (e.g., Grid, Executive Summary, Spotify-style).

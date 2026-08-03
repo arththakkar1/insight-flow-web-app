@@ -18,10 +18,10 @@ The documentation is organized into four main sections:
 ## Core Features
 
 - **Data Profiling**: Comprehensive summary and analysis of uploaded datasets.
-- **Data Cleaning Assistant**: AI-driven suggestions for handling missing values, duplicates, and standardizing formats.
+- **Data Cleaning Assistant**: Heuristic-based rules for handling missing values (via median imputation), duplicates, and standardizing formats.
 - **Data Modeling Assistant**: Automatic relationship detection and schema recommendations (Star/Snowflake).
 - **DAX Measure Generator**: Intelligent suggestions for business metrics and time-intelligence DAX formulas.
-- **Visualization & Dashboard Builder**: Recommends charts and generates full dashboard blueprints based on data types.
+- **Visualization & Dashboard Builder**: Deterministically recommends charts and generates instant dashboard blueprints based on robust rule-based logic.
 - **AI Analytics Assistant**: A natural language chat interface to ask questions about your data and analytics workflow.
 
 ## Technology Stack

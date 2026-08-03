@@ -14,7 +14,7 @@ graph TD
     subgraph "Internal Analytics Engines"
         B <-->|"Pandas / NumPy"| C["Data Profiling Engine"]
         B <-->|"Scikit-learn"| ML["ML Prediction Engine"]
-        B <-->|"Rule-based + LLM"| R["Report Generator"]
+        B <-->|"Rule-based Heuristics"| R["Report Generator"]
     end
     
     B <-->|"Local API Port 1234"| D["LM Studio (Qwen 2.5 Coder)"]
@@ -24,7 +24,7 @@ graph TD
 *   **Django Web Server:** Serves the API, handles authentication, routes requests, and manages transactions.
 *   **Django REST Framework:** Serialization of database models and structured REST controllers.
 *   **Pandas & NumPy:** In-memory dataset manipulation, type inference, profiling statistics, and duplicate/missing value processing.
-*   **LM Studio Proxy client:** Sends structured prompts to the local LLM endpoint (`http://localhost:1234/v1`) for complex reasoning tasks (DAX, modeling, cleaning advice).
+*   **LLM Proxy client:** Sends structured prompts to the configured LLM endpoint (e.g., OpenRouter or Local LM Studio) strictly for powering the conversational AI Analytics Assistant. The automated report and dashboard generation relies exclusively on deterministic fallback rules.
 
 ## 2. Directory Layout
 

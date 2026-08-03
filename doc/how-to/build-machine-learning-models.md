@@ -29,11 +29,11 @@ Click the **Train Model** button. Behind the scenes, InsightFlow will:
 Once training is complete, an **Evaluation Report** will be generated.
 - For **Classification**, review metrics like Accuracy, Precision, Recall, and F1-Score.
 - For **Regression**, review metrics like Mean Absolute Error (MAE) and R-Squared ($R^2$).
-InsightFlow's AI Analytics Assistant will also provide a natural language summary explaining whether the model is reliable.
+InsightFlow will also provide a deterministic metric summary outlining model reliability.
 
 ### 5. Run Predictions
 With a trained model, navigate to the **ML Models** tab.
-Here you can input new data values into a form. Click **Predict** to receive a real-time prediction based on your custom model. You can also export the complete ML analysis report for sharing.
+Here you can input new data values into a form. Categorical features are automatically detected and rendered as dropdown select menus populated with the correct categories from your training dataset. Click **Predict** to receive a real-time prediction based on your custom model. You can also export the complete ML analysis report for sharing.
 
 > [!TIP]
 > If you're unsure which columns to use as predictors, you can ask the **AI Analytics Assistant** for feature selection advice based on your dataset's profile.

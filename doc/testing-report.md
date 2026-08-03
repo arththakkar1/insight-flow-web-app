@@ -121,20 +121,20 @@ Here is an exhaustive breakdown of every single route, how it was tested, its ex
 ### Automated Generation & ML Routes
 
 #### 14. `POST /api/datasets/<str:pk>/generate-report/` (DatasetGenerateReportView)
-- **Description**: Instructs the LLM to auto-generate a comprehensive markdown report and layout based on the dataset.
-- **Testing Approach**: Mocked the `generate_report` LLM method. Verified 201 Created and that a `Report` entity was saved in the database.
+- **Description**: Uses deterministic rule-based heuristics to auto-generate a comprehensive markdown report and layout based on the dataset profiling.
+- **Testing Approach**: Verified 201 Created and that a `Report` entity was saved in the database without any external LLM calls.
 - **Result**: PASSED. No bugs discovered.
 
 #### 15. `POST /api/datasets/<str:pk>/generate-ml-report/` (DatasetGenerateMLReportView)
-- **Description**: Trains a Machine Learning model (e.g. Random Forest) on the dataset based on specified target/features, and generates an LLM summary of the model metrics.
-- **Testing Approach**: Seeded a CSV with numeric features and a target, mocked the LLM summary client, and initiated the ML pipeline.
-- **Bugs Discovered**: **CRITICAL (500 Error)**. The server lacked the `scikit-learn` package, throwing an import error. Furthermore, the test was sending invalid overlapping target/feature columns which crashed Pandas. Also, the mock setup was improperly returning a `MagicMock` object which crashed the DRF JSON serializer.
-- **Fix Applied**: Installed `scikit-learn` and added it to requirements. Updated the test payload to send proper distinct target and feature columns. Fixed the Python mocking setup.
+- **Description**: Trains a Machine Learning model (e.g. Random Forest) on the dataset based on specified target/features, and generates a deterministic summary of the model metrics.
+- **Testing Approach**: Seeded a CSV with numeric features and a target, and initiated the ML pipeline.
+- **Bugs Discovered**: **CRITICAL (500 Error)**. The server lacked the `scikit-learn` package, throwing an import error. Furthermore, the test was sending invalid overlapping target/feature columns which crashed Pandas.
+- **Fix Applied**: Installed `scikit-learn` and added it to requirements. Updated the test payload to send proper distinct target and feature columns.
 - **Result**: PASSED (After Bug Fixes).
 
 #### 16. `POST /api/datasets/<str:pk>/generate-dashboard/` (DatasetGenerateDashboardView)
-- **Description**: Uses the LLM to suggest a layout and chart configurations for a dashboard.
-- **Testing Approach**: Mocked the layout generator. Verified 201 Created and that a `CustomDashboard` entity was created.
+- **Description**: Uses heuristics to suggest a layout and chart configurations for a dashboard.
+- **Testing Approach**: Verified 201 Created and that a `CustomDashboard` entity was created.
 - **Result**: PASSED. No bugs discovered.
 
 #### 17. `POST /api/datasets/<str:pk>/predict/` (MLModelPredictView)

@@ -372,15 +372,49 @@ class DatasetGenerateDashboardView(APIView):
             columns = list(dataset.columns.all())
             dataset_info = f"Dataset: {dataset.name}, Rows: {dataset.rows_count}, Columns: " + ", ".join([f"{c.name} ({c.type})" for c in columns])
             
-            try:
-                import json
-                client = OpenRouterClient()
-                json_str = client.generate_dashboard_config(dataset_info)
-                data = json.loads(json_str)
-                return Response(data)
-            except Exception as e:
-                print(f"LLM Dashboard Generation failed: {str(e)}")
-                return Response({"error": "Failed to generate dashboard with AI."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            charts = []
+            num_cols = [c.name for c in columns if c.type in ['integer', 'float']]
+            cat_cols = [c.name for c in columns if c.type not in ['integer', 'float']]
+            
+            if num_cols and cat_cols:
+                charts.append({
+                    "id": "1",
+                    "type": "Bar",
+                    "title": f"Sum of {num_cols[0]} by {cat_cols[0]}",
+                    "xAxis": cat_cols[0],
+                    "yAxis": num_cols[0]
+                })
+                charts.append({
+                    "id": "2",
+                    "type": "Pie",
+                    "title": f"{num_cols[0]} Share by {cat_cols[0]}",
+                    "xAxis": cat_cols[0],
+                    "yAxis": num_cols[0]
+                })
+                if len(num_cols) > 1:
+                    charts.append({
+                        "id": "3",
+                        "type": "Line",
+                        "title": f"{num_cols[0]} Trend",
+                        "xAxis": cat_cols[0],
+                        "yAxis": num_cols[0]
+                    })
+                    charts.append({
+                        "id": "4",
+                        "type": "Scatter",
+                        "title": f"{num_cols[0]} vs {num_cols[1]}",
+                        "xAxis": num_cols[1],
+                        "yAxis": num_cols[0]
+                    })
+                
+            data = {
+                "layout": "grid-2x2",
+                "theme_style": "analytical",
+                "theme_font": "sans",
+                "custom_measures": [],
+                "charts": charts
+            }
+            return Response(data)
         except Dataset.DoesNotExist:
             return Response({"error": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -399,69 +433,49 @@ class DatasetGenerateReportView(APIView):
             
             dataset_info = f"Dataset: {dataset.name}, Rows: {dataset.rows_count}, Columns: " + ", ".join([f"{c.name} ({c.type})" for c in columns])
             
-            try:
-                import json
-                import re
-                client = OpenRouterClient()
-                json_str = client.generate_report_config(dataset_info)
-                
-                # Try to extract JSON if it is wrapped in markdown blocks
-                json_match = re.search(r'```json\s*(\{.*?\})\s*```', json_str, re.DOTALL)
-                if json_match:
-                    json_str = json_match.group(1)
-                else:
-                    json_match = re.search(r'(\{.*\})', json_str, re.DOTALL)
-                    if json_match:
-                        json_str = json_match.group(1)
-                
-                data = json.loads(json_str)
-                visuals_data = data.get("visuals_data", [])[:6]
-                dax_data = data.get("dax_data", [])[:5]
-            except Exception as e:
-                print(f"LLM Report Generation failed: {str(e)}")
-                # Fallback to hardcoded logic
-                if numeric_cols and categorical_cols:
-                    visuals_data.append({
-                        "type": "BarChart",
-                        "title": f"Sum of {numeric_cols[0]} by {categorical_cols[0]}",
-                        "description": f"X: {categorical_cols[0]}, Y: Sum({numeric_cols[0]})"
-                    })
-                    cat2 = categorical_cols[1] if len(categorical_cols) > 1 else categorical_cols[0]
-                    visuals_data.append({
-                        "type": "LineChart",
-                        "title": f"{numeric_cols[0]} Trend across {cat2}",
-                        "description": f"X: {cat2}, Y: {numeric_cols[0]}"
-                    })
-                    visuals_data.append({
-                        "type": "PieChart",
-                        "title": f"Distribution by {categorical_cols[0]}",
-                        "description": f"Category: {categorical_cols[0]}, Values: Count"
-                    })
-                else:
-                    visuals_data = [
-                        {"type": "BarChart", "title": "Data Distribution", "description": "General overview"},
-                        {"type": "LineChart", "title": "Trend Analysis", "description": "Trend over index"},
-                        {"type": "PieChart", "title": "Composition", "description": "Data composition"}
-                    ]
+            # Hardcoded logic (No AI)
+            if numeric_cols and categorical_cols:
+                visuals_data.append({
+                    "type": "BarChart",
+                    "title": f"Sum of {numeric_cols[0]} by {categorical_cols[0]}",
+                    "description": f"X: {categorical_cols[0]}, Y: Sum({numeric_cols[0]})"
+                })
+                cat2 = categorical_cols[1] if len(categorical_cols) > 1 else categorical_cols[0]
+                visuals_data.append({
+                    "type": "LineChart",
+                    "title": f"{numeric_cols[0]} Trend across {cat2}",
+                    "description": f"X: {cat2}, Y: {numeric_cols[0]}"
+                })
+                visuals_data.append({
+                    "type": "PieChart",
+                    "title": f"Distribution by {categorical_cols[0]}",
+                    "description": f"Category: {categorical_cols[0]}, Values: Count"
+                })
+            else:
+                visuals_data = [
+                    {"type": "BarChart", "title": "Data Distribution", "description": "General overview"},
+                    {"type": "LineChart", "title": "Trend Analysis", "description": "Trend over index"},
+                    {"type": "PieChart", "title": "Composition", "description": "Data composition"}
+                ]
                     
-                for num_col in numeric_cols[:3]:
-                    dax_data.append({
-                        "name": f"Total {num_col}",
-                        "formula": f"SUM('{dataset.name}'[{num_col}])"
-                    })
-                if not dax_data:
-                    dax_data = [{"name": "Row Count", "formula": f"COUNTROWS('{dataset.name}')"}]
-                    
-            try:
-                if 'client' not in locals():
-                    client = OpenRouterClient()
-                md_report = client.generate_detailed_bi_report(dataset_info, visuals_data, dax_data)
-                if visuals_data:
-                    if 'details' not in visuals_data[0]:
-                        visuals_data[0]['details'] = {}
-                    visuals_data[0]['details']['markdown_report'] = md_report
-            except Exception as e:
-                print(f"Failed to generate detailed BI report: {e}")
+            for num_col in numeric_cols[:3]:
+                dax_data.append({
+                    "name": f"Total {num_col}",
+                    "formula": f"SUM('{dataset.name}'[{num_col}])"
+                })
+            if not dax_data:
+                dax_data = [{"name": "Row Count", "formula": f"COUNTROWS('{dataset.name}')"}]
+                
+            # Hardcoded detailed markdown BI report (No AI)
+            md_report = f"# Executive BI Summary\n\nDataset **{dataset.name}** contains {dataset.rows_count} records.\n\n"
+            md_report += f"## Key Metrics\n"
+            for d in dax_data:
+                md_report += f"- **{d['name']}**: `{d['formula']}`\n"
+                
+            if visuals_data:
+                if 'details' not in visuals_data[0]:
+                    visuals_data[0]['details'] = {}
+                visuals_data[0]['details']['markdown_report'] = md_report
                     
             report_id = f"rep_{timezone.now().timestamp()}"
             report = Report.objects.create(user=request.user, 
@@ -927,6 +941,10 @@ class DatasetGenerateMLReportView(APIView):
             X_df = df_model[features].copy()
             cat_features = [col for col in features if X_df[col].dtype == 'object' or X_df[col].dtype.name == 'category']
             
+            cat_feature_options = {}
+            for col in cat_features:
+                cat_feature_options[col] = [str(x) for x in df_model[col].unique()]
+            
             X_encoded = pd.get_dummies(X_df, columns=cat_features, drop_first=True)
             feature_names = list(X_encoded.columns)
             
@@ -1072,13 +1090,23 @@ class DatasetGenerateMLReportView(APIView):
                 "predictions_sample": predictions_data,
                 "total_rows_trained": len(df_model)
             }
-            # Generate detailed AI Markdown Report via OpenRouter
-            try:
-                client = OpenRouterClient()
-                detailed_md_report = client.generate_detailed_markdown_report(ml_summary)
-                ml_summary['markdown_report'] = detailed_md_report
-            except Exception as e:
-                ml_summary['markdown_report'] = f"Failed to generate detailed AI report: {str(e)}"
+            # Hardcoded detailed Markdown Report (No AI)
+            detailed_md_report = (
+                f"# ML Model Diagnostics Report\n\n"
+                f"**Task Type**: {task_type.title()}\n"
+                f"**Model Type**: {model_type.replace('_', ' ').title()}\n"
+                f"**Target**: {target}\n"
+                f"**Total Training Rows**: {len(df_model)}\n\n"
+                f"## Performance Metrics\n"
+            )
+            for k, v in metrics.items():
+                detailed_md_report += f"- **{k.upper()}**: {v}\n"
+            
+            detailed_md_report += f"\n## Top Feature Importances\n"
+            for f in importances_list[:5]:
+                detailed_md_report += f"- **{f['feature']}**: {f['importance']}\n"
+                
+            ml_summary['markdown_report'] = detailed_md_report
             
             visuals_data = [
                 {
@@ -1115,6 +1143,7 @@ class DatasetGenerateMLReportView(APIView):
                 "model_type": model_type,
                 "feature_names_encoded": feature_names,
                 "cat_features": cat_features,
+                "cat_feature_options": cat_feature_options,
                 "target_classes": target_classes,
             }
             with open(meta_path, 'w') as f:

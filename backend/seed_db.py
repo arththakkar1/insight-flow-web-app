@@ -92,8 +92,8 @@ def run():
                 recommendation_id=f"clean_{ds_id}_1",
                 column="Amount",
                 issue=f"{missing} missing values",
-                recommendation="Fill missing values with mean",
-                action_type="fill_mean"
+                recommendation="Fill missing values with median",
+                action_type="fill_median"
             )
 
     print("Creating dummy reports, dashboards, and ML models...")

@@ -57,7 +57,7 @@ class DatasetAPITestCase(TestCase):
             recommendation_id="rec_1",
             column="col1",
             issue="missing values",
-            recommendation="fill mean",
+            recommendation="fill median",
             action_type="fill_median"
         )
         
