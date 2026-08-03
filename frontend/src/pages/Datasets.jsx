@@ -331,7 +331,7 @@ export default function Datasets() {
             </div>
             <div className="p-6 bg-primary text-primary-foreground rounded-[15px] shadow-sm flex flex-col">
               <div className="text-[11px] font-sans font-bold tracking-wider text-primary-foreground/70 uppercase mb-3">
-                Schema Quality
+                Columns
               </div>
               <div className="text-3xl font-medium tracking-tight mt-auto">
                 {datasetDetails.columns_count}{" "}

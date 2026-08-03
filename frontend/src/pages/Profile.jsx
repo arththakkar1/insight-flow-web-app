@@ -1,6 +1,40 @@
-import { User, Mail, Building, Edit2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Building, Edit2, Loader2 } from 'lucide-react';
+import { apiFetch } from '../utils/api';
 
 export default function Profile() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await apiFetch("http://localhost:8000/api/auth/check/");
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh] text-muted-foreground">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  const username = user?.username || "Unknown User";
+  const email = user?.email || "No email provided";
+  const role = user?.is_staff ? "Admin" : "User";
+
   return (
     <div className="max-w-4xl space-y-8 animate-in fade-in duration-200">
       <div className="border-b border-border pb-6">
@@ -14,9 +48,9 @@ export default function Profile() {
           <div className="w-20 h-20 rounded-full bg-background border border-border text-foreground flex items-center justify-center mb-5 shadow-sm">
             <User size={32} className="text-muted-foreground" />
           </div>
-          <h2 className="text-lg font-bold tracking-tight mb-1.5 text-foreground font-sans">Alex Analyst</h2>
+          <h2 className="text-lg font-bold tracking-tight mb-1.5 text-foreground font-sans">{username}</h2>
           <span className="px-3 py-1 bg-primary text-primary-foreground rounded-full text-[9px] font-bold uppercase tracking-wider">
-            Admin
+            {role}
           </span>
         </div>
         
@@ -35,8 +69,8 @@ export default function Profile() {
                 <User size={16} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] text-muted-foreground font-sans font-bold uppercase tracking-wider mb-0.5">Full Name</p>
-                <p className="text-xs font-semibold text-foreground font-sans truncate">Alex Analyst</p>
+                <p className="text-[10px] text-muted-foreground font-sans font-bold uppercase tracking-wider mb-0.5">Username</p>
+                <p className="text-xs font-semibold text-foreground font-sans truncate">{username}</p>
               </div>
             </div>
 
@@ -46,7 +80,7 @@ export default function Profile() {
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground font-sans font-bold uppercase tracking-wider mb-0.5">Email Address</p>
-                <p className="text-xs font-semibold text-foreground font-sans truncate">alex@insightflow.app</p>
+                <p className="text-xs font-semibold text-foreground font-sans truncate">{email}</p>
               </div>
             </div>
 
@@ -56,7 +90,7 @@ export default function Profile() {
               </div>
               <div className="min-w-0">
                 <p className="text-[10px] text-muted-foreground font-sans font-bold uppercase tracking-wider mb-0.5">Organization</p>
-                <p className="text-xs font-semibold text-foreground font-sans truncate">Acme Corp Data Team</p>
+                <p className="text-xs font-semibold text-foreground font-sans truncate">InsightFlow Workspace</p>
               </div>
             </div>
           </div>

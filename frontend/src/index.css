@@ -130,6 +130,12 @@
   }
   button, [role="button"], a {
     cursor: pointer;
+    outline: none !important;
+  }
+  button:focus, [role="button"]:focus, a:focus,
+  button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
   }
 }
 

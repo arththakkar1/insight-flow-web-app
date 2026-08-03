@@ -46,7 +46,10 @@ class OpenRouterClient:
                     temperature=0.7,
                     max_tokens=1000
                 )
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if content is None:
+                    raise Exception("Model returned empty content")
+                return content
             except Exception as e:
                 # If it's the last model in the fallback list, raise the exception
                 if idx == len(models_to_try) - 1:
@@ -90,7 +93,10 @@ class OpenRouterClient:
                     max_tokens=1500,
                     response_format={"type": "json_object"}
                 )
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if content is None:
+                    raise Exception("Model returned empty content")
+                return content
             except Exception as e:
                 if idx == len(models_to_try) - 1:
                     raise e
@@ -183,7 +189,10 @@ class OpenRouterClient:
                     temperature=0.7,
                     max_tokens=2500
                 )
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if content is None:
+                    raise Exception("Model returned empty content")
+                return content
             except Exception as e:
                 if idx == len(models_to_try) - 1:
                     raise e
@@ -222,7 +231,10 @@ class OpenRouterClient:
                     temperature=0.7,
                     max_tokens=2500
                 )
-                return response.choices[0].message.content
+                content = response.choices[0].message.content
+                if content is None:
+                    raise Exception("Model returned empty content")
+                return content
             except Exception as e:
                 if idx == len(models_to_try) - 1:
                     raise e

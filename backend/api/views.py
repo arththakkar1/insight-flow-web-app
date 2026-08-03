@@ -64,7 +64,12 @@ class CookieLogoutView(APIView):
 class AuthCheckView(APIView):
     """Returns 200 if the request is authenticated, 401 otherwise."""
     def get(self, request):
-        return Response({'authenticated': True, 'username': request.user.username})
+        return Response({
+            'authenticated': True, 
+            'username': request.user.username,
+            'email': request.user.email,
+            'is_staff': request.user.is_staff
+        })
 
 
 class RegisterView(APIView):
@@ -1330,6 +1335,14 @@ class SharedCustomDashboardView(APIView):
                 columns = list(df.columns)
                 dataset_data = df.to_dict(orient='records')
 
+            from .models import Dataset
+            custom_measures = []
+            try:
+                ds = Dataset.objects.get(id=dashboard.dataset_id)
+                custom_measures = ds.custom_measures
+            except Exception:
+                pass
+
             return Response({
                 "dataset_id": dashboard.dataset_id,
                 "layout": dashboard.layout,
@@ -1337,6 +1350,7 @@ class SharedCustomDashboardView(APIView):
                 "theme_font": dashboard.theme_font,
                 "charts": dashboard.charts,
                 "columns": columns,
+                "custom_measures": custom_measures,
                 "data": dataset_data
             })
         except CustomDashboard.DoesNotExist:

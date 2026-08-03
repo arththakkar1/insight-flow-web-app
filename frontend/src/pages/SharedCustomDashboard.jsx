@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
   LineChart, Line, BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
@@ -35,6 +35,8 @@ export default function SharedCustomDashboard() {
   const [loading, setLoading] = useState(true);
   
   const [datasetData, setDatasetData] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [customMeasures, setCustomMeasures] = useState([]);
   const [layout, setLayout] = useState('grid-2x2');
   const [themeStyle, setThemeStyle] = useState('default');
   const [themeFont, setThemeFont] = useState('sans');
@@ -54,6 +56,8 @@ export default function SharedCustomDashboard() {
           setThemeFont(data.theme_font);
           setCharts(data.charts);
           setDatasetData(data.data || []);
+          setColumns(data.columns || []);
+          setCustomMeasures(data.custom_measures || []);
           setLoading(false);
         })
         .catch(err => {
@@ -62,6 +66,75 @@ export default function SharedCustomDashboard() {
         });
     }
   }, [token]);
+
+  const enrichedData = useMemo(() => {
+    if (datasetData.length === 0) {
+      return [];
+    }
+    const SUM = (...args) => args.reduce((a, b) => (Number(a) || 0) + (Number(b) || 0), 0);
+    const AVERAGE = (...args) => (args.length ? SUM(...args) / args.length : 0);
+    const MAX = (...args) => Math.max(...args.map(a => Number(a) || 0));
+    const MIN = (...args) => Math.min(...args.map(a => Number(a) || 0));
+    const IF = (condition, t, f) => condition ? t : f;
+    const DIVIDE = (num, den, alt = 0) => Number(den) === 0 ? alt : Number(num) / Number(den);
+    
+    try {
+      const escapeRegExp = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const sortedCols = [...columns].sort((a, b) => b.length - a.length);
+      
+      const newData = datasetData.map(row => {
+        const newRow = { ...row };
+        sortedCols.forEach(col => {
+           if (newRow[col] !== null && newRow[col] !== undefined && newRow[col] !== '') {
+               if (!isNaN(Number(newRow[col]))) {
+                   newRow[col] = Number(newRow[col]);
+               }
+           }
+        });
+
+        customMeasures.forEach(measure => {
+          try {
+            let formula = measure.formula || '';
+            sortedCols.forEach(col => {
+              if (!col) return;
+              if (formula.includes(col)) {
+                const raw = row[col];
+                let replacement;
+                if (raw === null || raw === undefined || raw === '') replacement = 0;
+                else if (!isNaN(Number(raw))) replacement = Number(raw);
+                else {
+                  const safe = String(raw).replace(/'/g, "\\'");
+                  replacement = `'${safe}'`;
+                }
+                const regex = new RegExp(escapeRegExp(col), 'g');
+                formula = formula.replace(regex, replacement);
+              }
+            });
+            const computeFormula = new Function('SUM', 'AVERAGE', 'MAX', 'MIN', 'IF', 'DIVIDE', 'Number', 'return ' + formula);
+            const result = computeFormula(SUM, AVERAGE, MAX, MIN, IF, DIVIDE, Number);
+            if (typeof result === 'number' && isFinite(result)) newRow[measure.name] = result;
+            else if (!isNaN(Number(result))) newRow[measure.name] = Number(result);
+            else newRow[measure.name] = 0;
+          } catch(e) {
+            newRow[measure.name] = 0;
+          }
+        });
+        return newRow;
+      });
+      return newData;
+    } catch(e) {
+      const parsedData = datasetData.map(row => {
+         const newRow = { ...row };
+         columns.forEach(col => {
+             if (newRow[col] !== null && newRow[col] !== undefined && newRow[col] !== '') {
+                 if (!isNaN(Number(newRow[col]))) newRow[col] = Number(newRow[col]);
+             }
+         });
+         return newRow;
+      });
+      return parsedData;
+    }
+  }, [datasetData, customMeasures, columns]);
 
   if (error) {
     return (
@@ -81,19 +154,35 @@ export default function SharedCustomDashboard() {
   }
 
   const renderChart = (chartConfig, index, currentColors) => {
-    if (!datasetData || datasetData.length === 0) {
+    if (!enrichedData || enrichedData.length === 0) {
       return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">No Data</div>;
     }
-    if (!chartConfig.xAxis || !chartConfig.yAxis) {
-       return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">Configure Axes</div>;
+    if (chartConfig.type === "KPI") {
+      if (!chartConfig.yAxis) {
+        return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">Configure Metric (Y-Axis)</div>;
+      }
+    } else {
+      if (!chartConfig.xAxis || !chartConfig.yAxis) {
+        return <div className="flex h-full w-full items-center justify-center text-muted-foreground text-sm font-mono">Configure Axes</div>;
+      }
     }
 
-    const { type, xAxis, yAxis } = chartConfig;
+    const { type, xAxis, yAxis, topN } = chartConfig;
     const color = currentColors[index % currentColors.length];
     
+    let chartData = [...enrichedData];
+    if (topN && type !== "KPI" && type !== "Pie") {
+      const limit = parseInt(topN, 10);
+      if (!isNaN(limit)) {
+        chartData = chartData
+          .sort((a, b) => (Number(b[yAxis]) || 0) - (Number(a[yAxis]) || 0))
+          .slice(0, limit);
+      }
+    }
+
     const CustomTooltipStyle = {
-      backgroundColor: themeStyle === 'spotify' ? '#121212' : (themeStyle === 'netflix' || themeStyle === 'cyberpunk') ? '#000' : themeStyle === 'analytical' ? '#fff' : 'hsl(var(--card))', 
-      borderColor: themeStyle === 'spotify' ? '#282828' : (themeStyle === 'netflix' || themeStyle === 'cyberpunk') ? '#333' : 'hsl(var(--border))', 
+      backgroundColor: themeStyle === 'spotify' ? '#121212' : (themeStyle === 'netflix' || themeStyle === 'cyberpunk') ? '#000' : themeStyle === 'analytical' ? '#fff' : 'var(--card)', 
+      borderColor: themeStyle === 'spotify' ? '#282828' : (themeStyle === 'netflix' || themeStyle === 'cyberpunk') ? '#333' : 'var(--border)', 
       borderRadius: '8px',
       color: themeStyle === 'spotify' ? '#fff' : (themeStyle === 'netflix' || themeStyle === 'cyberpunk') ? '#fff' : 'inherit',
       boxShadow: themeStyle === 'cyberpunk' ? '0 0 10px rgba(0, 255, 255, 0.2)' : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
@@ -102,7 +191,7 @@ export default function SharedCustomDashboard() {
     switch (type) {
       case 'KPI': {
         let value = 0;
-        const validData = datasetData.filter(d => d[yAxis] !== null && d[yAxis] !== undefined && d[yAxis] !== '');
+        const validData = enrichedData.filter(d => d[yAxis] !== null && d[yAxis] !== undefined && d[yAxis] !== '');
         if (validData.length > 0) {
           const sum = validData.reduce((acc, curr) => acc + (Number(curr[yAxis]) || 0), 0);
           if (chartConfig.aggregation === 'sum') value = sum;
@@ -123,45 +212,49 @@ export default function SharedCustomDashboard() {
           </div>
         );
       }
-      case 'Line':
+      case 'Line': {
+        const sortedLineData = [...chartData].sort((a, b) => a[xAxis] > b[xAxis] ? 1 : -1);
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={datasetData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <LineChart data={sortedLineData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
               <XAxis dataKey={xAxis} tick={{fontSize: 10}} />
               <YAxis tick={{fontSize: 10}} />
-              <RechartsTooltip contentStyle={CustomTooltipStyle} />
+              <RechartsTooltip cursor={false} contentStyle={CustomTooltipStyle} />
               <Legend />
               <Line type="monotone" dataKey={yAxis} stroke={color} strokeWidth={3} dot={false} activeDot={{ r: 8 }} />
             </LineChart>
           </ResponsiveContainer>
         );
+      }
       case 'Bar':
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={datasetData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
               <XAxis dataKey={xAxis} tick={{fontSize: 10}} />
               <YAxis tick={{fontSize: 10}} />
-              <RechartsTooltip contentStyle={CustomTooltipStyle} cursor={{fill: 'rgba(255,255,255,0.05)'}} />
+              <RechartsTooltip cursor={false} contentStyle={CustomTooltipStyle} />
               <Legend />
               <Bar dataKey={yAxis} fill={color} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         );
-      case 'Area':
+      case 'Area': {
+        const sortedAreaData = [...chartData].sort((a, b) => a[xAxis] > b[xAxis] ? 1 : -1);
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={datasetData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+            <AreaChart data={sortedAreaData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
               <XAxis dataKey={xAxis} tick={{fontSize: 10}} />
               <YAxis tick={{fontSize: 10}} />
-              <RechartsTooltip contentStyle={CustomTooltipStyle} />
+              <RechartsTooltip cursor={false} contentStyle={CustomTooltipStyle} />
               <Legend />
               <Area type="monotone" dataKey={yAxis} fill={color} stroke={color} fillOpacity={0.4} />
             </AreaChart>
           </ResponsiveContainer>
         );
+      }
       case 'Scatter':
         return (
           <ResponsiveContainer width="100%" height="100%">
@@ -169,25 +262,26 @@ export default function SharedCustomDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#333" opacity={0.2} />
               <XAxis dataKey={xAxis} tick={{fontSize: 10}} name={xAxis} />
               <YAxis dataKey={yAxis} tick={{fontSize: 10}} name={yAxis} />
-              <RechartsTooltip cursor={{strokeDasharray: '3 3'}} contentStyle={CustomTooltipStyle} />
+              <RechartsTooltip cursor={false} contentStyle={CustomTooltipStyle} />
               <Legend />
-              <Scatter name={`${xAxis} vs ${yAxis}`} data={datasetData} fill={color} />
+              <Scatter name={`${xAxis} vs ${yAxis}`} data={chartData} fill={color} />
             </ScatterChart>
           </ResponsiveContainer>
         );
       case 'Pie': {
         const aggs = {};
-        datasetData.forEach(d => {
+        enrichedData.forEach(d => {
           const k = d[xAxis];
           const v = Number(d[yAxis]) || 0;
           if (k) aggs[k] = (aggs[k] || 0) + v;
         });
-        const pieData = Object.keys(aggs).map(k => ({ name: k, value: aggs[k] })).sort((a,b) => b.value - a.value).slice(0, 10);
+        const limit = topN ? parseInt(topN, 10) : 10;
+        const pieData = Object.keys(aggs).map(k => ({ name: k, value: aggs[k] })).sort((a,b) => b.value - a.value).slice(0, limit);
         
         return (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-              <RechartsTooltip contentStyle={CustomTooltipStyle} />
+              <RechartsTooltip cursor={false} contentStyle={CustomTooltipStyle} />
               <Legend />
               <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={80} stroke="none">
                 {pieData.map((entry, idx) => (
